@@ -1,6 +1,5 @@
 // Custom Jest reporter that outputs a text summary (ESM format)
 import fs from 'fs';
-import path from 'path';
 
 export default class TestSummaryReporter {
   constructor(globalConfig, options) {
@@ -13,7 +12,16 @@ export default class TestSummaryReporter {
     const { testResults, numTotalTests, numPassedTests, numFailedTests, numPendingTests, startTime, endTime } = results;
 
     const duration = ((endTime - startTime) / 1000).toFixed(2);
-    const date = new Date().toISOString();
+    const now = new Date();
+    const date = now.toLocaleString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short'
+    });
 
     let output = `Test Summary - ${date}\n`;
     output += '='.repeat(50) + '\n\n';
