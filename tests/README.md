@@ -73,6 +73,34 @@ If `better-sqlite3` fails to load, rebuild native modules:
 npx electron-rebuild
 ```
 
+## Coverage Report
+
+After running `npm run test:coverage`, view the HTML report:
+
+```bash
+start coverage/index.html
+```
+
+Or open `coverage/index.html` directly in your browser. The report includes:
+- Coverage percentages (statements, branches, functions, lines)
+- Line-by-line highlighting (green = covered, red = uncovered)
+- Module-specific reports for each tested file
+
+## Available npm Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm test` | Run all tests |
+| `npm run test:unit` | Run unit tests only |
+| `npm run test:integration` | Run integration tests only |
+| `npm run test:coverage` | Run tests with coverage report |
+| `npm run dev` | Start Electron app in dev mode |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
+| `npm run lint:fix` | Fix ESLint issues automatically |
+| `npm run typecheck` | Run TypeScript type checking |
+
 ## Troubleshooting
 
 ### "Cannot find module" errors
