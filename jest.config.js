@@ -52,5 +52,11 @@ export default {
   ],
   
   // Verbose output
-  verbose: true
+  verbose: true,
+
+  // Custom reporter for test summary.txt
+  reporters: [
+    'default',
+    ['<rootDir>/scripts/test-summary-reporter.js', { outputFile: 'test-summary.txt' }]
+  ]
 }
