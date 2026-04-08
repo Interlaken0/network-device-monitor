@@ -1,0 +1,130 @@
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+
+const require = createRequire(import.meta.url)
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// The built directory structure
+//
+// ├─┬─┬ dist
+// │ │ └── index.html
+// │ │
+// │ ├─┬ dist-electron
+// │ │ ├── main.js
+// │ │ └── preload.mjs
+// │
+process.env.APP_ROOT = path.join(__dirname, '../..')
+
+// 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
+export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
+export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
+export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
+
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
+  ? path.join(process.env.APP_ROOT, 'public')
+  : RENDERER_DIST
+
+let win // BrowserWindow reference
+
+function createWindow() {
+  win = new BrowserWindow({
+    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.animate.svg'),
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: false,    // Security: Disable Node.js integration
+      contextIsolation: true,    // Security: Enable context isolation
+      sandbox: true,             // Security: Enable sandbox
+      preload: path.join(__dirname, '../preload/index.mjs'), // Secure preload bridge
+      allowRunningInsecureContent: false,
+      experimentalFeatures: false,
+      enableBlinkFeatures: ''
+    },
+    show: false // Show when ready to prevent flash
+  })
+
+  // Security: Prevent new window creation
+  win.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+
+  // Security: Prevent navigation to external URLs
+  win.webContents.on('will-navigate', (event, url) => {
+    if (url !== win.webContents.getURL()) {
+      event.preventDefault()
+      shell.openExternal(url)
+    }
+  })
+
+  // Test actively push message to the Electron-Renderer
+  win.webContents.on('did-finish-load', () => {
+    win?.webContents.send('main-process-message', new Date().toLocaleString())
+  })
+
+  // Make all links open with the browser, not with the application
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https:')) shell.openExternal(url)
+    return { action: 'deny' }
+  })
+
+  // Show window when ready
+  win.once('ready-to-show', () => {
+    win.show()
+    win.focus()
+  })
+
+  if (VITE_DEV_SERVER_URL) {
+    win.loadURL(VITE_DEV_SERVER_URL)
+  } else {
+    // win.loadFile('dist/index.html')
+    win.loadFile(path.join(RENDERER_DIST, 'index.html'))
+  }
+}
+
+// Quit when all windows are closed, except on macOS
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})
+
+app.on('activate', () => {
+  // On OS X it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow()
+  }
+})
+
+app.whenReady().then(() => {
+  createWindow()
+})
+
+// In this file you can include the rest of your app's specific main process
+// code. You can also put them in separate files and import them here.
+
+// Security: Whitelist of valid IPC channels
+const VALID_CHANNELS = [
+  'device:create',
+  'device:read',
+  'device:update',
+  'device:delete',
+  'ping:start',
+  'ping:stop',
+  'ping:result'
+]
+
+// Example IPC handler with validation
+ipcMain.handle('device:create', async (event, deviceData) => {
+  try {
+    // Input validation would go here
+    console.log('Creating device:', deviceData)
+    return { success: true, id: 1 }
+  } catch (error) {
+    console.error('Error creating device:', error)
+    throw new Error('Failed to create device')
+  }
+})

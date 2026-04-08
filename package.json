@@ -24,13 +24,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "better-sqlite3": "^9.4.3",
     "electron": "^28.0.0",
-    "ping": "^0.4.4",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "recharts": "^2.10.0",
-    "zustand": "^4.5.0"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.6.0",
