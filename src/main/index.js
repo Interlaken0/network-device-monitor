@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { registerDatabaseHandlers } from './ipc-handlers.js'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -100,6 +101,9 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(() => {
+  // Register IPC handlers
+  registerDatabaseHandlers()
+  
   createWindow()
 })
 
@@ -114,17 +118,14 @@ const VALID_CHANNELS = [
   'device:delete',
   'ping:start',
   'ping:stop',
-  'ping:result'
+  'ping:startAll',
+  'ping:stopAll',
+  'ping:status',
+  'ping:record',
+  'ping:getRecent',
+  'ping:getStats',
+  'ping:result',
+  'db:stats'
 ]
 
-// Example IPC handler with validation
-ipcMain.handle('device:create', async (event, deviceData) => {
-  try {
-    // Input validation would go here
-    console.log('Creating device:', deviceData)
-    return { success: true, id: 1 }
-  } catch (error) {
-    console.error('Error creating device:', error)
-    throw new Error('Failed to create device')
-  }
-})
+// IPC handlers are now registered in registerDatabaseHandlers()

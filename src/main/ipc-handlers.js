@@ -9,6 +9,7 @@
 
 import { ipcMain } from 'electron'
 import { getDatabase } from './database.js'
+import networkMonitor from './network-monitor.js'
 
 // Validation helpers
 const validators = {
@@ -32,6 +33,64 @@ const validators = {
  */
 export function registerDatabaseHandlers() {
   const db = getDatabase()
+  
+  // ========== Ping Monitoring Handlers ==========
+  
+  ipcMain.handle('ping:start', async (event, deviceId, ipAddress, intervalMs) => {
+    try {
+      const success = await networkMonitor.startMonitoring(deviceId, ipAddress, intervalMs || 5000)
+      return { success, data: { deviceId, ipAddress, status: success ? 'started' : 'already-running' } }
+    } catch (error) {
+      console.error('Error starting ping monitoring:', error)
+      return { success: false, error: error.message }
+    }
+  })
+  
+  ipcMain.handle('ping:stop', async (event, deviceId) => {
+    try {
+      const success = networkMonitor.stopMonitoring(deviceId)
+      return { success, data: { deviceId, status: success ? 'stopped' : 'not-running' } }
+    } catch (error) {
+      console.error('Error stopping ping monitoring:', error)
+      return { success: false, error: error.message }
+    }
+  })
+  
+  ipcMain.handle('ping:startAll', async (event, intervalMs) => {
+    try {
+      const count = await networkMonitor.monitorAllDevices(intervalMs || 5000)
+      return { success: true, data: { started: count } }
+    } catch (error) {
+      console.error('Error starting all monitoring:', error)
+      return { success: false, error: error.message }
+    }
+  })
+  
+  ipcMain.handle('ping:stopAll', async () => {
+    try {
+      networkMonitor.stopAll()
+      return { success: true, data: { status: 'all-stopped' } }
+    } catch (error) {
+      console.error('Error stopping all monitoring:', error)
+      return { success: false, error: error.message }
+    }
+  })
+  
+  ipcMain.handle('ping:status', async (event, deviceId) => {
+    try {
+      if (deviceId) {
+        const status = networkMonitor.getDeviceStatus(deviceId)
+        return { success: true, data: status }
+      } else {
+        const allStatuses = networkMonitor.getAllStatuses()
+        const count = networkMonitor.getMonitoredCount()
+        return { success: true, data: { count, devices: allStatuses } }
+      }
+    } catch (error) {
+      console.error('Error getting ping status:', error)
+      return { success: false, error: error.message }
+    }
+  })
   
   // ========== Device Handlers ==========
   
