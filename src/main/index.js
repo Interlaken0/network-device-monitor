@@ -99,7 +99,7 @@ app.whenReady().then(async () => {
   // Register IPC handlers (optional - allows MVP to run without database)
   try {
     const { registerDatabaseHandlers } = await import('./ipc-handlers.js')
-    registerDatabaseHandlers()
+    await registerDatabaseHandlers()
   } catch (error) {
     console.warn('Database not available, running without persistence:', error.message)
   }

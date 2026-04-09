@@ -1,4 +1,3 @@
-import Database from 'better-sqlite3'
 import { app } from 'electron'
 import path from 'path'
 import fs from 'fs'
@@ -14,6 +13,16 @@ import fs from 'fs'
  * @see Technical-Deep-Dive.md Section 2.1 for library comparison
  * @see Technical-Deep-Dive.md Section 4.4 for memory management patterns
  */
+
+// Lazy-loaded better-sqlite3 (native module, must not be bundled)
+let Database = null
+async function getDatabaseClass() {
+  if (!Database) {
+    const module = await import('better-sqlite3')
+    Database = module.default
+  }
+  return Database
+}
 
 class DatabaseManager {
   static instance = null
@@ -35,8 +44,11 @@ class DatabaseManager {
    * Initialise database connection
    * Called automatically on first use
    */
-  initialise() {
+  async initialise() {
     if (this.db) return
+    
+    // Dynamically import better-sqlite3 (native module)
+    const DatabaseClass = await getDatabaseClass()
     
     // Store database in user's app data directory
     const dbPath = path.join(app.getPath('userData'), 'network-monitor.sqlite')
@@ -48,7 +60,7 @@ class DatabaseManager {
     }
     
     // Create connection
-    this.db = new Database(dbPath)
+    this.db = new DatabaseClass(dbPath)
     
     // Enable foreign keys (SQLite default is off)
     this.db.pragma('journal_mode = WAL')
@@ -430,15 +442,16 @@ class DatabaseManager {
 }
 
 // Export singleton getter
-export const getDatabase = () => {
+export const getDatabase = async () => {
   const db = DatabaseManager.getInstance()
-  db.initialise()
+  await db.initialise()
   return db
 }
 
 // For testing with in-memory database
-export const createTestDatabase = () => {
-  const db = new Database(':memory:')
+export const createTestDatabase = async () => {
+  const DatabaseClass = await getDatabaseClass()
+  const db = new DatabaseClass(':memory:')
   db.pragma('foreign_keys = ON')
   
   // Create tables

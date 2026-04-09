@@ -31,8 +31,8 @@ const validators = {
 /**
  * Register all database IPC handlers
  */
-export function registerDatabaseHandlers() {
-  const db = getDatabase()
+export async function registerDatabaseHandlers() {
+  const db = await getDatabase()
   
   // ========== Ping Monitoring Handlers ==========
   
