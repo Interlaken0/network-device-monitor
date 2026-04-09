@@ -13,7 +13,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 process.env.APP_ROOT = path.join(__dirname, '../..')
 
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
-export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
+// Fallback to default dev server port if env var not set
+export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'] || 'http://localhost:5173'
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'out/main')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'out/renderer')
 
