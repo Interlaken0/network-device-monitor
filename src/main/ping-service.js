@@ -93,7 +93,7 @@ class PingService {
       }
 
       // Record to database
-      const db = getDatabase()
+      const db = await getDatabase()
       db.recordPing(pingData)
 
       // Call callback if provided
@@ -120,7 +120,7 @@ class PingService {
       }
 
       // Record failure to database
-      const db = getDatabase()
+      const db = await getDatabase()
       db.recordPing(pingData)
 
       if (onResult) {
@@ -159,7 +159,7 @@ class PingService {
    * @private
    */
   async _handleOutage() {
-    const db = getDatabase()
+    const db = await getDatabase()
     
     // Check if there's already an active outage
     const activeOutage = db.getActiveOutage(this.deviceId)
@@ -175,8 +175,8 @@ class PingService {
    * Resolve an active outage (called when ping succeeds)
    * @private
    */
-  _resolveOutage() {
-    const db = getDatabase()
+  async _resolveOutage() {
+    const db = await getDatabase()
     const activeOutage = db.getActiveOutage(this.deviceId)
     
     if (activeOutage) {

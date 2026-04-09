@@ -33,7 +33,7 @@ class NetworkMonitor {
     }
 
     // Validate device exists
-    const db = getDatabase()
+    const db = await getDatabase()
     const device = db.getDevice(deviceId)
     if (!device) {
       throw new Error(`Device ${deviceId} not found in database`)
@@ -174,8 +174,8 @@ class NetworkMonitor {
    * @private
    * @returns {Object} Aggregate statistics
    */
-  _calculateAggregateStatus() {
-    const db = getDatabase()
+  async _calculateAggregateStatus() {
+    const db = await getDatabase()
     let totalDevices = 0
     let onlineDevices = 0
     let offlineDevices = 0
@@ -214,7 +214,7 @@ class NetworkMonitor {
    * @returns {Promise<number>} Number of devices started
    */
   async monitorAllDevices(intervalMs = 5000) {
-    const db = getDatabase()
+    const db = await getDatabase()
     const devices = db.getAllDevices(true) // Only active devices
     
     let started = 0

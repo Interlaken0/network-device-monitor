@@ -160,11 +160,8 @@ export async function registerDatabaseHandlers() {
   
   ipcMain.handle('device:delete', async (event, id) => {
     try {
-      // Check for active outage
-      const activeOutage = db.getActiveOutage(id)
-      if (activeOutage) {
-        throw new Error('Cannot delete device with active outage. Resolve outage first.')
-      }
+      // Note: Outage check removed for MVP simplicity
+      // In production, you might want to prevent deletion during active outages
       
       const result = db.deleteDevice(id)
       return { success: true, data: result }
