@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 //
 // ├─┬─┬ out
 // │ │ ├── main/index.js
-// │ │ ├── preload/index.mjs
+// │ │ ├── preload/index.js
 // │ │ └── renderer/index.html
 process.env.APP_ROOT = path.join(__dirname, '../..')
 
@@ -33,7 +33,7 @@ function createWindow() {
       nodeIntegration: false,    // Security: Disable Node.js integration
       contextIsolation: true,    // Security: Enable context isolation
       sandbox: true,             // Security: Enable sandbox
-      preload: path.join(__dirname, '../preload/index.mjs'), // Secure preload bridge
+      preload: path.join(__dirname, '../preload/index.cjs'), // Secure preload bridge
       allowRunningInsecureContent: false,
       experimentalFeatures: false,
       enableBlinkFeatures: ''
