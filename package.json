@@ -27,7 +27,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "better-sqlite3": "^9.4.3",
+    "better-sqlite3": "^12.8.0",
     "electron": "^28.0.0",
     "ping": "^0.4.4",
     "react": "^18.2.0",
