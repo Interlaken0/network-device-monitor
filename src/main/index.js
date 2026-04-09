@@ -1,10 +1,7 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { createRequire } from 'node:module'
+import { app, shell, BrowserWindow } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { registerDatabaseHandlers } from './ipc-handlers.js'
 
-const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // The built directory structure
@@ -97,9 +94,14 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(() => {
-  // Register IPC handlers
-  registerDatabaseHandlers()
+app.whenReady().then(async () => {
+  // Register IPC handlers (optional - allows MVP to run without database)
+  try {
+    const { registerDatabaseHandlers } = await import('./ipc-handlers.js')
+    registerDatabaseHandlers()
+  } catch (error) {
+    console.warn('Database not available, running without persistence:', error.message)
+  }
   
   createWindow()
 })
