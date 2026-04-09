@@ -466,13 +466,13 @@ removeListener: (channel, callback) => {
 ### 8.1 Testing Pyramid
 
 ```
-    /\
-   /  \  E2E Tests (System)
-  /____\
- /      \  Integration Tests
-/________\
-/          \  Unit Tests (Majority)
-/____________\
+       /\
+      /  \  E2E Tests (System)
+     /____\
+    /      \  Integration Tests
+   /________\
+  /          \  Unit Tests (Majority)
+ /____________\
 ```
 
 ### 8.2 Test Coverage Requirements
@@ -570,15 +570,15 @@ Types: feat, fix, docs, test, refactor, security
 ### Appendix A: Project Timeline Gantt
 
 ```
-Week:    1  2  3  4  5  6  7  8  9  10 11 12
+Week:       1-2      3-4      5-6      7-8     9-10    11-12
 Sprint:  [===1===][===2===][===3===][===4===][===5===][===6===]
          
-Foundation       [====]
-Database              [====]
-Dashboard                  [====]
-Reporting                        [====]
-Alerts                                [====]
-Packaging                                  [====]
+Foundation [====]
+Database            [====]
+Dashboard                    [====]
+Reporting                             [====]
+Alerts                                         [====]
+Packaging                                               [====]
 ```
 
 ### Appendix B: Tooling & Versions
