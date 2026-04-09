@@ -11,7 +11,21 @@ export default class TestSummaryReporter {
   onRunComplete(contexts, results) {
     const { testResults, numTotalTests, numPassedTests, numFailedTests, numPendingTests, startTime, endTime } = results;
 
-    const duration = ((endTime - startTime) / 1000).toFixed(2);
+    // Calculate duration with multiple fallbacks
+    let durationMs = 0;
+    
+    // Try global timing first
+    if (startTime && endTime && !isNaN(startTime) && !isNaN(endTime)) {
+      durationMs = endTime - startTime;
+    } 
+    // Fallback: sum up individual test suite durations
+    else if (testResults && testResults.length > 0) {
+      durationMs = testResults.reduce((sum, suite) => {
+        return sum + (suite.perfStats?.end - suite.perfStats?.start || 0);
+      }, 0);
+    }
+    
+    const duration = durationMs > 0 ? (durationMs / 1000).toFixed(2) + 's' : 'N/A';
     const now = new Date();
     const date = now.toLocaleString('en-GB', {
       day: 'numeric',
@@ -26,7 +40,7 @@ export default class TestSummaryReporter {
     let output = `Test Summary - ${date}\n`;
     output += '='.repeat(50) + '\n\n';
     output += `Total: ${numTotalTests} | Passed: ${numPassedTests} | Failed: ${numFailedTests} | Skipped: ${numPendingTests}\n`;
-    output += `Duration: ${duration}s\n\n`;
+    output += `Duration: ${duration}\n\n`;
 
     testResults.forEach(suite => {
       const relPath = suite.testFilePath.replace(process.cwd(), '');
