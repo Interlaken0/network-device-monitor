@@ -7,6 +7,8 @@ function App() {
   const [pingResults, setPingResults] = useState({})
   const [isMonitoring, setIsMonitoring] = useState({})
   const [error, setError] = useState(null)
+  const [editingDevice, setEditingDevice] = useState(null)
+  const [editForm, setEditForm] = useState({ name: '', ipAddress: '', deviceType: 'server', location: '' })
 
   // Load devices on mount
   useEffect(() => {
@@ -68,6 +70,10 @@ function App() {
   }
 
   const handleDeleteDevice = async (id) => {
+    if (!confirm('Are you sure you want to delete this device?')) {
+      return
+    }
+
     try {
       // Stop monitoring if active
       if (isMonitoring[id]) {
@@ -82,6 +88,50 @@ function App() {
       }
     } catch (err) {
       setError('Error deleting device: ' + err.message)
+    }
+  }
+
+  const handleEditClick = (device) => {
+    setEditingDevice(device.id)
+    setEditForm({
+      name: device.name || '',
+      ipAddress: device.ip_address || device.ipAddress || '',
+      deviceType: device.device_type || device.deviceType || 'server',
+      location: device.location || ''
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingDevice(null)
+    setEditForm({ name: '', ipAddress: '', deviceType: 'server', location: '' })
+  }
+
+  const handleUpdateDevice = async (e, deviceId) => {
+    e.preventDefault()
+
+    if (!editForm.name || !editForm.ipAddress) {
+      setError('Please enter both name and IP address')
+      return
+    }
+
+    try {
+      const result = await window.electronAPI?.updateDevice(deviceId, {
+        name: editForm.name,
+        ipAddress: editForm.ipAddress,
+        deviceType: editForm.deviceType,
+        location: editForm.location
+      })
+
+      if (result?.success) {
+        setEditingDevice(null)
+        setEditForm({ name: '', ipAddress: '', deviceType: 'server', location: '' })
+        setError(null)
+        await loadDevices()
+      } else {
+        setError(result?.error || 'Failed to update device')
+      }
+    } catch (err) {
+      setError('Error updating device: ' + err.message)
     }
   }
 
@@ -175,12 +225,49 @@ function App() {
                 const monitoring = isMonitoring[device.id]
                 
                 return (
-                  <div key={device.id} className={`device-item ${monitoring ? 'monitoring' : ''}`}>
-                    <div className="device-info">
-                      <h3>{device.name}</h3>
-                      <p className="ip-address">{device.ip_address || device.ipAddress}</p>
-                      <p className="device-type">{device.device_type || device.deviceType}</p>
-                    </div>
+                  <div key={device.id} className={`device-item ${monitoring ? 'monitoring' : ''} ${editingDevice === device.id ? 'editing' : ''}`}>
+                    {editingDevice === device.id ? (
+                      <form onSubmit={(e) => handleUpdateDevice(e, device.id)} className="edit-form">
+                        <input
+                          type="text"
+                          placeholder="Device Name"
+                          value={editForm.name}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                        />
+                        <input
+                          type="text"
+                          placeholder="IP Address"
+                          value={editForm.ipAddress}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, ipAddress: e.target.value }))}
+                        />
+                        <select
+                          value={editForm.deviceType}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, deviceType: e.target.value }))}
+                        >
+                          <option value="server">Server</option>
+                          <option value="router">Router</option>
+                          <option value="printer">Printer</option>
+                          <option value="switch">Switch</option>
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="Location (optional)"
+                          value={editForm.location}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                        />
+                        <div className="edit-actions">
+                          <button type="submit" className="btn-save">Save</button>
+                          <button type="button" onClick={handleCancelEdit} className="btn-cancel">Cancel</button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <div className="device-info">
+                          <h3>{device.name}</h3>
+                          <p className="ip-address">{device.ip_address || device.ipAddress}</p>
+                          <p className="device-type">{device.device_type || device.deviceType}</p>
+                          {device.location && <p className="device-location">{device.location}</p>}
+                        </div>
 
                     <div className="device-status">
                       {monitoring && pingData ? (
@@ -219,12 +306,20 @@ function App() {
                         </button>
                       )}
                       <button 
+                        onClick={() => handleEditClick(device)}
+                        className="btn-edit"
+                      >
+                        Edit
+                      </button>
+                      <button 
                         onClick={() => handleDeleteDevice(device.id)}
                         className="btn-delete"
                       >
                         Delete
                       </button>
                     </div>
+                    </>
+                  )}
                   </div>
                 )
               })}
