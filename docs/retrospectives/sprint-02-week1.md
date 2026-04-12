@@ -49,7 +49,7 @@ The `isMonitoring` state follows the same pattern — a dictionary tracking whic
 | IP validation complexity | Combined IPv4 and IPv6 regex patterns with a logical OR — accepts either format but rejects invalid inputs | Users can use standard IP formats, typos are caught early |
 | React re-render optimisation | Used object spread with computed property keys to update only changed device states | UI stays responsive even with many devices |
 
-## What I Learned This Week
+## What I Learnt This Week
 
 **Validation belongs at the trust boundary.** The IPC layer is where renderer process meets main process — that's where you validate. Doing it here means malicious or buggy renderer code cannot bypass your checks, and you write the validation logic once rather than duplicating it in UI and database layers.
 

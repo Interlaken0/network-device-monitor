@@ -61,7 +61,7 @@
 | React state loss during device editing | Implemented controlled form components with local edit state | Device editing now preserves form data correctly |
 | Ping library timeout handling inconsistencies | Added AbortController for graceful cancellation and explicit error handling | Monitoring stops cleanly without orphaned ping processes |
 
-## Lessons Learned
+## Lessons Learnt
 
 - **Native module testing requires isolated strategies.** Attempting to test better-sqlite3 directly in Jest caused compilation errors. Using sqlite3 (prebuilt, no compilation) for test databases while keeping better-sqlite3 for production provided a clean separation without sacrificing test reliability.
 
