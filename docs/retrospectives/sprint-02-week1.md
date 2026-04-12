@@ -18,6 +18,11 @@ This week saw the core functionality of the network monitor come together. We mo
 
 4. **Real-Time React UI** — The interface shows live ping results with colour-coded latency badges (green for excellent, amber for fair, red for poor), monitoring controls per device, and inline editing.
 
+## Bug Fixes
+- Fixed device_type field mapping (camelCase → snake_case)
+- Added regression test coverage for field name conversions
+- Verified all CRUD operations work with proper field persistence
+
 ## Technical Decisions We Made
 
 ### Validation at the IPC Boundary
