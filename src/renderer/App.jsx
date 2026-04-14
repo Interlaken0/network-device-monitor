@@ -9,6 +9,7 @@ function App() {
   const [error, setError] = useState(null)
   const [editingDevice, setEditingDevice] = useState(null)
   const [editForm, setEditForm] = useState({ name: '', ipAddress: '', deviceType: 'server', location: '' })
+  const [deleteModal, setDeleteModal] = useState({ show: false, deviceId: null, deviceName: '' })
 
   // Load devices on mount
   useEffect(() => {
@@ -69,10 +70,17 @@ function App() {
     }
   }
 
-  const handleDeleteDevice = async (id) => {
-    if (!confirm('Are you sure you want to delete this device?')) {
-      return
-    }
+  const handleDeleteClick = (device) => {
+    setDeleteModal({ show: true, deviceId: device.id, deviceName: device.name })
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteModal({ show: false, deviceId: null, deviceName: '' })
+  }
+
+  const handleConfirmDelete = async () => {
+    const id = deleteModal.deviceId
+    setDeleteModal({ show: false, deviceId: null, deviceName: '' })
 
     try {
       // Stop monitoring if active
@@ -312,7 +320,7 @@ function App() {
                         Edit
                       </button>
                       <button 
-                        onClick={() => handleDeleteDevice(device.id)}
+                        onClick={() => handleDeleteClick(device)}
                         className="btn-delete"
                       >
                         Delete
@@ -326,6 +334,20 @@ function App() {
             </div>
           )}
         </section>
+
+        {/* Delete Confirmation Modal */}
+        {deleteModal.show && (
+          <div className="modal-overlay" onClick={handleCancelDelete}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h3>Confirm Delete</h3>
+              <p>Are you sure you want to delete <strong>{deleteModal.deviceName}</strong>?</p>
+              <div className="modal-actions">
+                <button onClick={handleCancelDelete} className="btn-cancel">Cancel</button>
+                <button onClick={handleConfirmDelete} className="btn-delete">Delete</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Live Ping Results */}
         {Object.keys(pingResults).length > 0 && (
