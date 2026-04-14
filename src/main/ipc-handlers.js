@@ -136,20 +136,37 @@ export async function registerDatabaseHandlers() {
   
   ipcMain.handle('device:update', async (event, id, updates) => {
     try {
+      // Map camelCase field names to snake_case for database
+      const fieldMapping = {
+        name: 'name',
+        ipAddress: 'ip_address',
+        deviceType: 'device_type',
+        location: 'location',
+        isActive: 'is_active'
+      }
+      
+      const dbUpdates = {}
+      for (const [key, value] of Object.entries(updates)) {
+        const dbField = fieldMapping[key]
+        if (dbField) {
+          dbUpdates[dbField] = value
+        }
+      }
+      
       // Validate IP if provided
-      if (updates.ipAddress && !validators.ipAddress(updates.ipAddress)) {
+      if (dbUpdates.ip_address && !validators.ipAddress(dbUpdates.ip_address)) {
         throw new Error('Invalid IP address format')
       }
       
       // Check for duplicate IP if changed
-      if (updates.ipAddress) {
-        const existing = db.getDeviceByIp(updates.ipAddress)
+      if (dbUpdates.ip_address) {
+        const existing = db.getDeviceByIp(dbUpdates.ip_address)
         if (existing && existing.id !== id) {
           throw new Error('IP address already exists')
         }
       }
       
-      const result = db.updateDevice(id, updates)
+      const result = db.updateDevice(id, dbUpdates)
       return { success: true, data: result }
       
     } catch (error) {

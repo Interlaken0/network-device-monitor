@@ -69,6 +69,9 @@ class DatabaseManager {
     // Initialise schema
     this.initialiseSchema()
     
+    // Run migrations to fix schema issues
+    this.runMigrations()
+    
     console.log('Database initialised at:', dbPath)
   }
   
@@ -82,12 +85,18 @@ class DatabaseManager {
       CREATE TABLE IF NOT EXISTS devices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        ip_address TEXT UNIQUE NOT NULL,
+        ip_address TEXT NOT NULL,
         device_type TEXT CHECK(device_type IN ('server', 'router', 'printer', 'switch')),
         location TEXT,
         is_active BOOLEAN DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+    `)
+    
+    // Partial unique index: only active devices must have unique IPs
+    this.db.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_ip_active 
+      ON devices(ip_address) WHERE is_active = 1;
     `)
     
     // ping_logs: Time-series latency measurements
@@ -127,6 +136,68 @@ class DatabaseManager {
       CREATE INDEX IF NOT EXISTS idx_outages_device 
         ON outages(device_id);
     `)
+  }
+  
+  /**
+   * Run database migrations to fix schema issues
+   * Handles transition from old UNIQUE constraint to partial unique index
+   */
+  runMigrations() {
+    try {
+      // Check if old sqlite_autoindex_devices_1 exists (from UNIQUE constraint)
+      const autoIndex = this.db.prepare(
+        "SELECT name FROM sqlite_master WHERE type='index' AND name='sqlite_autoindex_devices_1'"
+      ).get()
+      
+      if (autoIndex) {
+        console.log('Migration: Removing old UNIQUE constraint and creating partial index...')
+        
+        // SQLite doesn't support DROP CONSTRAINT - need to recreate table
+        // 1. Disable foreign key enforcement during migration
+        this.db.pragma('foreign_keys = OFF')
+        
+        // 2. Create new table without UNIQUE constraint on ip_address
+        this.db.exec(`
+          CREATE TABLE devices_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            ip_address TEXT NOT NULL,
+            device_type TEXT CHECK(device_type IN ('server', 'router', 'printer', 'switch')),
+            location TEXT,
+            is_active BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `)
+        
+        // 3. Copy all data
+        this.db.exec(`
+          INSERT INTO devices_new SELECT * FROM devices;
+        `)
+        
+        // 4. Drop old table
+        this.db.exec(`DROP TABLE devices;`)
+        
+        // 5. Rename new table
+        this.db.exec(`ALTER TABLE devices_new RENAME TO devices;`)
+        
+        // 6. Recreate indexes
+        this.db.exec(`
+          CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_ip_active 
+          ON devices(ip_address) WHERE is_active = 1;
+        `)
+        
+        // 7. Re-enable foreign keys
+        this.db.pragma('foreign_keys = ON')
+        
+        // 8. Clear prepared statement cache since schema changed
+        this.statements.clear()
+        
+        console.log('Migration: Schema updated successfully')
+      }
+    } catch (error) {
+      console.error('Migration error:', error)
+      // Don't throw - let app continue even if migration fails
+    }
   }
   
   /**
@@ -195,7 +266,7 @@ class DatabaseManager {
   getDeviceByIp(ipAddress) {
     const stmt = this.getStatement(
       'getDeviceByIp',
-      'SELECT * FROM devices WHERE ip_address = ?'
+      'SELECT * FROM devices WHERE ip_address = ? AND is_active = 1'
     )
     return stmt.get(ipAddress)
   }
