@@ -18,6 +18,15 @@ class PingService {
     this.deviceId = null
     this.ipAddress = null
     this.intervalMs = 5000 // 5 second default interval
+    
+    // Statistics tracking
+    this.stats = {
+      totalPings: 0,
+      successfulPings: 0,
+      failedPings: 0,
+      latencies: [], // Last 10 successful latencies for running stats
+      startTime: null
+    }
   }
 
   /**
@@ -38,6 +47,15 @@ class PingService {
     this.intervalMs = intervalMs
     this.isRunning = true
     this.abortController = new AbortController()
+    
+    // Reset statistics
+    this.stats = {
+      totalPings: 0,
+      successfulPings: 0,
+      failedPings: 0,
+      latencies: [],
+      startTime: Date.now()
+    }
 
     console.log(`Starting ping monitoring for ${ipAddress} (device ${deviceId})`)
 
@@ -86,6 +104,24 @@ class PingService {
         timeout: 3,
         extra: isWindows ? ['-n', '1', '-w', '3000'] : ['-c', '1']
       })
+
+      // Update statistics
+      this.stats.totalPings++
+      if (result.alive) {
+        this.stats.successfulPings++
+        this.stats.latencies.push(result.time)
+        // Keep only last 10 latencies for running average
+        if (this.stats.latencies.length > 10) {
+          this.stats.latencies.shift()
+        }
+      } else {
+        this.stats.failedPings++
+      }
+
+      // Log ping result with stats summary
+      const status = result.alive ? `SUCCESS ${result.time}ms` : 'TIMEOUT'
+      const stats = this._getStatsSummary()
+      console.log(`[Ping] ${this.ipAddress}: ${status} | ${stats}`)
 
       const pingData = {
         deviceId: this.deviceId,
@@ -186,6 +222,29 @@ class PingService {
       db.endOutage(activeOutage.id)
       console.log(`Outage resolved for device ${this.deviceId} (${this.ipAddress})`)
     }
+  }
+
+  /**
+   * Calculate and format running statistics summary
+   * @private
+   * @returns {string} Formatted stats string
+   */
+  _getStatsSummary() {
+    const { totalPings, successfulPings, failedPings, latencies } = this.stats
+    
+    if (totalPings === 0) return 'No data'
+    
+    const successRate = ((successfulPings / totalPings) * 100).toFixed(1)
+    
+    let latencyStats = 'N/A'
+    if (latencies.length > 0) {
+      const avg = (latencies.reduce((a, b) => a + b, 0) / latencies.length).toFixed(1)
+      const min = Math.min(...latencies)
+      const max = Math.max(...latencies)
+      latencyStats = `avg:${avg}ms min:${min}ms max:${max}ms`
+    }
+    
+    return `Total:${totalPings} Success:${successRate}%${failedPings > 0 ? ' Failed:' + failedPings : ''} | ${latencyStats}`
   }
 
   /**
