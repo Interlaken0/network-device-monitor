@@ -105,7 +105,7 @@ npm run build
 This creates the production bundles in the `out/` directory:
 - `out/main/` - Main process code
 - `out/preload/` - Preload script
-- `out/renderer/` - React frontend
+- `out/renderer/` - React frontend (generated on build)
 
 ### Package the app:
 ```bash
@@ -144,7 +144,7 @@ Generates coverage report in `coverage/` directory.
 network-device-monitor/
 ├── docs/                       # Documentation
 │   ├── agile-strategy.md       # Sprint planning & SDLC
-│   └── Technical-Deep-Dive.md  # Architecture decisions
+│   └── technical-deep-dive.md  # Architecture decisions
 ├── src/
 │   ├── main/                   # Electron main process
 │   │   ├── index.js            # App entry point, window creation
@@ -162,9 +162,10 @@ network-device-monitor/
 │   ├── unit/                   # Unit tests
 │   │   ├── database.test.js
 │   │   ├── ping-service.test.js
-│   │   └── network-monitor.test.js
+│   │   ├── network-monitor.test.js
+│   │   └── validators.test.js
 │   └── mocks/                  # Test mocks
-├── out/                        # Build output (generated)
+├── out/                        # Build output (generated on first build)
 ├── electron.vite.config.js     # Vite configuration
 ├── jest.config.js              # Jest test configuration
 └── package.json                # Dependencies & scripts
