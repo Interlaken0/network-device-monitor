@@ -1,5 +1,6 @@
 import PingService from './ping-service.js'
 import { getDatabase } from './database.js'
+import { BrowserWindow } from 'electron'
 
 /**
  * NetworkMonitor - Multi-device ping monitoring coordinator
@@ -167,6 +168,15 @@ class NetworkMonitor {
         lastPing: pingData.timestamp
       })
     }
+
+    // Broadcast to renderer process
+    const windows = BrowserWindow.getAllWindows()
+    windows.forEach(win => {
+      win.webContents.send('ping:result', {
+        deviceId,
+        ...pingData
+      })
+    })
   }
 
   /**
