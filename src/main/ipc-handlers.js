@@ -11,6 +11,25 @@ import { ipcMain } from 'electron'
 import { getDatabase } from './database.js'
 import networkMonitor from './network-monitor.js'
 
+// Transform database snake_case fields to camelCase for frontend
+function transformDevice(device) {
+  if (!device) return null
+  return {
+    id: device.id,
+    name: device.name,
+    ipAddress: device.ip_address,
+    deviceType: device.device_type,
+    location: device.location,
+    isActive: device.is_active,
+    createdAt: device.created_at
+  }
+}
+
+function transformDevices(devices) {
+  if (!devices) return []
+  return devices.map(transformDevice)
+}
+
 // Validation helpers
 const validators = {
   ipAddress: (value) => {
@@ -126,8 +145,10 @@ export async function registerDatabaseHandlers() {
   
   ipcMain.handle('device:read', async (event, id) => {
     try {
-      const device = id ? db.getDevice(id) : db.getAllDevices()
-      return { success: true, data: device }
+      const result = id ? db.getDevice(id) : db.getAllDevices()
+      // Transform snake_case to camelCase for frontend
+      const data = id ? transformDevice(result) : transformDevices(result)
+      return { success: true, data }
     } catch (error) {
       console.error('Error reading device:', error)
       return { success: false, error: error.message }
