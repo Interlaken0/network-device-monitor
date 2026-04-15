@@ -24,8 +24,8 @@ header h1 {
 
 main {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: 260px 1fr minmax(320px, auto);
+  gap: 1.5rem;
 }
 
 .card {
@@ -161,14 +161,16 @@ ul li:last-child {
 }
 
 .device-item {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
+  display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: space-between;
+  gap: 0.75rem;
   padding: 1rem;
   background: white;
   border: 1px solid #dee2e6;
   border-radius: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .device-item.monitoring {
@@ -176,9 +178,19 @@ ul li:last-child {
   background: #f8fff8;
 }
 
+.device-info {
+  flex: 1 1 100px;
+  min-width: 100px;
+  overflow: hidden;
+}
+
 .device-info h3 {
   margin: 0 0 0.25rem 0;
   color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1.1rem;
 }
 
 .ip-address {
@@ -193,6 +205,14 @@ ul li:last-child {
   color: #adb5bd;
   font-size: 0.8rem;
   text-transform: uppercase;
+}
+
+.device-status {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+  margin: 0 0.3rem;
 }
 
 /* Modal Styles */
@@ -238,18 +258,15 @@ ul li:last-child {
   background: #6c757d;
 }
 
-.btn-cancel:hover {
-  background: #5a6268;
-}
-
 .latency-badge {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
   border-radius: 20px;
   font-weight: 600;
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .latency-excellent {
@@ -305,13 +322,21 @@ ul li:last-child {
 
 .device-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+  min-width: fit-content;
+  white-space: nowrap;
+}
+
+.device-actions button {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  min-width: auto;
 }
 
 .btn-start {
   background: #28a745;
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
 }
 
 .btn-start:hover {
@@ -321,8 +346,6 @@ ul li:last-child {
 .btn-stop {
   background: #ffc107;
   color: #212529;
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
 }
 
 .btn-stop:hover {
@@ -331,12 +354,18 @@ ul li:last-child {
 
 .btn-delete {
   background: #dc3545;
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
 }
 
 .btn-delete:hover {
   background: #c82333;
+}
+
+.btn-edit {
+  background: #6c757d;
+}
+
+.btn-edit:hover {
+  background: #5a6268;
 }
 
 .ping-log {
@@ -348,9 +377,10 @@ ul li:last-child {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0.75rem;
+  padding: 0.6rem 0.75rem;
   border-bottom: 1px solid #e9ecef;
   font-size: 0.9rem;
+  gap: 1rem;
 }
 
 .ping-entry:last-child {
@@ -365,19 +395,68 @@ ul li:last-child {
   background: #fff8f8;
 }
 
+.ping-entry .ping-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 120px;
+}
+
 .ping-entry .device-name {
   font-weight: 500;
   color: #495057;
+  word-break: break-word;
+}
+
+.ping-entry .ip-address {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.ping-entry .ping-details {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .ping-entry .timestamp {
   color: #6c757d;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.ping-entry .status-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ping-entry .status-badge.online {
+  background: #d4edda;
+  color: #155724;
+}
+
+.ping-entry .status-badge.offline {
+  background: #f8d7da;
+  color: #721c24;
 }
 
 .ping-entry .result {
   font-weight: 600;
   font-family: monospace;
+}
+
+.ping-entry .result.online {
+  color: #28a745;
+}
+
+.ping-entry .result.offline {
+  color: #dc3545;
 }
 
 /* Edit Device Styles */
@@ -412,16 +491,6 @@ ul li:last-child {
   margin-top: 0.5rem;
 }
 
-.btn-edit {
-  background: #6c757d;
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-}
-
-.btn-edit:hover {
-  background: #5a6268;
-}
-
 .btn-save {
   background: #28a745;
   color: white;
@@ -454,4 +523,11 @@ ul li:last-child {
   font-size: 0.8rem;
   color: #6c757d;
   margin-top: 0.25rem;
+}
+
+/* Responsive: Stack columns on smaller screens */
+@media (max-width: 900px) {
+  main {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1,5 +1,6 @@
 import ping from 'ping'
 import { getDatabase } from './database.js'
+import os from 'os'
 
 /**
  * PingService - ICMP ping implementation with cancellation support
@@ -78,10 +79,12 @@ class PingService {
         return
       }
 
+      // Use Windows-compatible ping flags
+      const isWindows = os.platform() === 'win32'
+      
       const result = await ping.promise.probe(this.ipAddress, {
-        timeout: 3, // 3 second timeout
-        min_reply: 1,
-        extra: ['-c', '1'] // Single packet on Unix
+        timeout: 3,
+        extra: isWindows ? ['-n', '1', '-w', '3000'] : ['-c', '1']
       })
 
       const pingData = {

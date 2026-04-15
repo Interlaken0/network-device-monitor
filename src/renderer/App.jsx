@@ -166,7 +166,7 @@ function App() {
 
   const handleStopMonitoring = async (deviceId) => {
     try {
-      const result = await window.electronAPI?.stopPing?.(deviceId)
+      await window.electronAPI?.stopPing?.(deviceId)
       setIsMonitoring(prev => ({ ...prev, [deviceId]: false }))
       setPingResults(prev => {
         const updated = { ...prev }
@@ -302,13 +302,15 @@ function App() {
                         <button 
                           onClick={() => handleStartMonitoring(device)}
                           className="btn-start"
+                          title="Start Monitoring"
                         >
-                          Start Monitoring
+                          Start
                         </button>
                       ) : (
                         <button 
                           onClick={() => handleStopMonitoring(device.id)}
                           className="btn-stop"
+                          title="Stop Monitoring"
                         >
                           Stop
                         </button>
@@ -356,13 +358,23 @@ function App() {
             <div className="ping-log">
               {Object.entries(pingResults).map(([deviceId, result]) => {
                 const device = devices.find(d => d.id === parseInt(deviceId))
+                const time = new Date(result.timestamp)
+                const timeString = time.toLocaleTimeString('en-GB', { hour12: false })
                 return (
                   <div key={deviceId} className={`ping-entry ${result.success ? 'success' : 'failure'}`}>
-                    <span className="device-name">{device?.name || 'Unknown'}</span>
-                    <span className="timestamp">{new Date(result.timestamp).toLocaleTimeString()}</span>
-                    <span className="result">
-                      {result.success ? `${result.latencyMs}ms` : 'Failed'}
-                    </span>
+                    <div className="ping-info">
+                      <span className="device-name" title={device?.name}>{device?.name || 'Unknown'}</span>
+                      <span className="ip-address">{device?.ipAddress || 'Unknown IP'}</span>
+                    </div>
+                    <div className="ping-details">
+                      <span className="timestamp">{timeString}</span>
+                      <span className={`status-badge ${result.success ? 'online' : 'offline'}`}>
+                        {result.success ? 'Online' : 'Offline'}
+                      </span>
+                      <span className={`result ${result.success ? 'online' : 'offline'}`}>
+                        {result.success ? `${result.latencyMs}ms` : 'Timeout'}
+                      </span>
+                    </div>
                   </div>
                 )
               })}
