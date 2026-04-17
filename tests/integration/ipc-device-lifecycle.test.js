@@ -105,7 +105,7 @@ describe('IPC Device Lifecycle Integration', () => {
         content.indexOf("ipcMain.handle('device:read'"),
         content.indexOf("ipcMain.handle('device:update'")
       )
-      expect(handlerSection).toContain('return { success: true, data: device }')
+      expect(handlerSection).toContain('return { success: true, data }')
     })
   })
 
@@ -122,12 +122,12 @@ describe('IPC Device Lifecycle Integration', () => {
 
     it('validates IP address if provided in updates', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
-      expect(content).toContain('if (updates.ipAddress && !validators.ipAddress(updates.ipAddress))')
+      expect(content).toContain('if (dbUpdates.ip_address && !validators.ipAddress(dbUpdates.ip_address))')
     })
 
     it('checks for duplicate IP when IP is changed', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
-      expect(content).toContain('if (updates.ipAddress)')
+      expect(content).toContain('if (dbUpdates.ip_address)')
       expect(content).toContain('existing.id !== id')
     })
 
@@ -138,7 +138,7 @@ describe('IPC Device Lifecycle Integration', () => {
 
     it('calls db.updateDevice with validated data', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
-      expect(content).toContain('db.updateDevice(id, updates)')
+      expect(content).toContain('db.updateDevice(id, dbUpdates)')
     })
 
     it('returns update result with changes count', () => {
@@ -312,7 +312,7 @@ describe('IPC Device Lifecycle Integration', () => {
     it('update handler separates ID from updates', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
       expect(content).toMatch(/async.*event, id, updates/)
-      expect(content).toContain('db.updateDevice(id, updates)')
+      expect(content).toContain('db.updateDevice(id, dbUpdates)')
     })
   })
 })
