@@ -1,78 +1,33 @@
-# User Stories & Personas
+# User Stories
 
 **Project:** AMF Network Device Monitor  
 **Format:** Gherkin (Given/When/Then)  
-**Personas:** Alex (IT Admin), Sarah (Network Manager)  
+**User:** Jeff — Solo IT Administrator at JJ Confederation Ltd  
+**Developer:** Greg — Software Development Apprentice  
 
 ---
 
-## Personas
+## Context
 
-### Primary Persona: Alex Thompson - IT Administrator
+These user stories are written from the perspective of **Jeff**, the solo IT administrator at JJ Confederation Ltd who will actually use this application. They reflect real requirements discussed between Greg (apprentice developer) and Jeff (employer/mentor/user) during sprint planning sessions.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Alex Thompson                                              │
-│  Role: IT Administrator                                     │
-│  Age: 32                                                    │
-│  Experience: 5 years in IT                                  │
-│  Technical Skill: Intermediate                              │
-│  Domain Knowledge: Network troubleshooting, user support    │
-├─────────────────────────────────────────────────────────────┤
-│  GOALS                                                      │
-│  • Monitor network health proactively                       │
-│  • Reduce response time to outages                          │
-│  • Generate uptime reports for management                   │
-├─────────────────────────────────────────────────────────────┤
-│  PAIN POINTS                                                │
-│  • Currently discovers outages via user complaints          │
-│  • No historical data for trend analysis                    │
-│  • Manual ping checks are time-consuming                    │
-├─────────────────────────────────────────────────────────────┤
-│  SCENARIO                                                   │
-│  "I arrive at 8am and check the dashboard over coffee.      │
-│   I see a router in the east wing showing high latency.     │
-│   I investigate before users start arriving, preventing     │
-│   a productivity loss."                                     │
-└─────────────────────────────────────────────────────────────┘
-```
+Unlike fictional personas, these stories are grounded in:
+- **JJ Confederation Ltd's actual network infrastructure** (small-medium environment)
+- **Jeff's daily workflow** (reactive troubleshooting, proactive monitoring)
+- **Apprenticeship timeline** (6 sprints, 12 weeks)
+- **Solo-operator constraints** (no complex multi-user features needed)
 
-### Secondary Persona: Sarah Chen - Network Manager
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Sarah Chen                                                 │
-│  Role: Network Manager                                      │
-│  Age: 45                                                    │
-│  Experience: 20 years in IT                                 │
-│  Technical Skill: Advanced                                  │
-│  Domain Knowledge: Capacity planning, budget justification  │
-├─────────────────────────────────────────────────────────────┤
-│  GOALS                                                      │
-│  • Capacity planning based on historical data               │
-│  • Prove infrastructure reliability to stakeholders         │
-│  • Identify recurring problem areas                         │
-├─────────────────────────────────────────────────────────────┤
-│  PAIN POINTS                                                │
-│  • No data-driven evidence for upgrade requests             │
-│  • Difficult to correlate issues across time                │
-│  • Exporting data for external analysis is manual           │
-├─────────────────────────────────────────────────────────────┤
-│  SCENARIO                                                   │
-│  "In the quarterly review, I export a CSV of all outages    │
-│   and latency trends. I present this to the board to        │
-│   justify a switch upgrade. The data clearly shows the      │
-│   existing switch is at capacity."                          │
-└─────────────────────────────────────────────────────────────┘
-```
+See `user-personas.md` for detailed context on Jeff's role and technical environment.
 
 ---
 
 ## Epic 1: Device Management
 
-### Story 1.1: Add Network Device
+### Story 1.1: Add Network Device (Sprints 1-2)
 
-**As** Alex, **I want** to add a network device **so that** I can monitor its status.
+**As the network administrator, I want** to add a network device **so that** I can monitor its status without manual ping commands.
+
+**Context:** This addresses Jeff's current pain point of manually typing ping commands in terminal to check device status.
 
 ```gherkin
 Feature: Add Network Device
@@ -143,9 +98,11 @@ Feature: Add Network Device
 
 ---
 
-### Story 1.2: Edit Device Details
+### Story 1.2: Edit Device Details (Sprint 2)
 
-**As** Alex, **I want** to edit device details **so that** I can correct mistakes or update information.
+**As the network administrator, I want** to edit device details **so that** I can correct mistakes or update information as the network changes.
+
+**Context:** JJ Confederation Ltd's network evolves — devices get renamed, moved between locations, or reconfigured. Jeff needs to keep the monitor in sync without deleting and recreating devices.
 
 ```gherkin
 Feature: Edit Network Device
@@ -196,9 +153,11 @@ Feature: Edit Network Device
 
 ---
 
-### Story 1.3: Remove Device
+### Story 1.3: Remove Device (Sprint 2)
 
-**As** Alex, **I want** to remove a device **so that** I stop monitoring decommissioned equipment.
+**As the network administrator, I want** to remove a device **so that** I stop monitoring decommissioned equipment and keep the dashboard uncluttered.
+
+**Context:** When Jeff retires old printers or replaces routers, he needs to clean up the monitoring list. Historical data should be retained for reference even after removal.
 
 ```gherkin
 Feature: Remove Network Device
@@ -252,9 +211,11 @@ Feature: Remove Network Device
 
 ## Epic 2: Real-time Monitoring
 
-### Story 2.1: View Device Status Dashboard
+### Story 2.1: View Device Status Dashboard (Sprints 1, 3)
 
-**As** Alex, **I want** to see all device statuses at a glance **so that** I can quickly identify problems.
+**As the network administrator, I want** to see all device statuses at a glance **so that** I can identify problems during my morning coffee check without opening a terminal.
+
+**Context:** Jeff's ideal workflow: arrive at 8am, open the dashboard, spot any amber/red indicators immediately, investigate before users arrive. This replaces the current reactive model of discovering issues via user complaints.
 
 ```gherkin
 Feature: Device Status Dashboard
@@ -324,9 +285,11 @@ Feature: Device Status Dashboard
 
 ---
 
-### Story 2.2: View Latency Trends
+### Story 2.2: View Latency Trends (Sprint 3)
 
-**As** Sarah, **I want** to see historical latency charts **so that** I can identify patterns and trends.
+**As the network administrator, I want** to see historical latency charts **so that** I can identify patterns (like that printer that always slows down at 9am when everyone arrives) and make data-driven decisions.
+
+**Context:** Jeff has noticed intermittent issues but lacks data to prove patterns. Charts will help him distinguish between "one-off blips" and "recurring problems that need hardware replacement".
 
 ```gherkin
 Feature: Latency Trend Charts
@@ -405,9 +368,11 @@ Feature: Latency Trend Charts
 
 ## Epic 3: Outage Detection & Alerting
 
-### Story 3.1: Configure Alert Thresholds
+### Story 3.1: Configure Alert Thresholds (Sprint 5)
 
-**As** Alex, **I want** to set custom alert thresholds per device **so that** I receive relevant notifications.
+**As the network administrator, I want** to set custom alert thresholds per device **so that** I am not overwhelmed with notifications but do get alerted when something genuinely needs attention.
+
+**Context:** Jeff manages different device types with different expectations — a server should respond in <50ms, but a cheap wireless printer might normally take 100ms. Thresholds prevent alert fatigue.
 
 ```gherkin
 Feature: Configure Alert Thresholds
@@ -457,9 +422,11 @@ Feature: Configure Alert Thresholds
 
 ---
 
-### Story 3.2: Receive and Acknowledge Alerts
+### Story 3.2: Receive and Acknowledge Alerts (Sprint 5)
 
-**As** Alex, **I want** visual alerts when thresholds are breached **so that** I notice issues immediately.
+**As the network administrator, I want** visual and audible alerts when thresholds are breached **so that** I notice issues even when the dashboard is not in focus.
+
+**Context:** Jeff often has multiple applications open while troubleshooting. A toast notification that appears over other windows ensures critical issues are not missed. Acknowledgement prevents repeated alerts for the same issue.
 
 ```gherkin
 Feature: Alert Notifications
@@ -526,9 +493,11 @@ Triggered → Unacknowledged → Acknowledged → Resolved
 
 ## Epic 4: Historical Analysis & Reporting
 
-### Story 4.1: View Outage History
+### Story 4.1: View Outage History (Sprint 4)
 
-**As** Sarah, **I want** to see a history of all outages **so that** I can analyse reliability.
+**As the network administrator, I want** to see a history of all outages with calculated availability percentages **so that** I can answer questions like "how reliable is our network?" and justify infrastructure investments.
+
+**Context:** Jeff needs concrete data for discussions with JJ Confederation Ltd management. "The east wing switch had 3 outages totalling 45 minutes last month" carries more weight than "the network seems flaky sometimes".
 
 ```gherkin
 Feature: Outage History
@@ -589,9 +558,11 @@ Availability % = (Total Time - Downtime) / Total Time × 100
 
 ---
 
-### Story 4.2: Export Data to CSV
+### Story 4.2: Export Data to CSV (Sprint 4)
 
-**As** Sarah, **I want** to export data to CSV **so that** I can analyse it in external tools.
+**As the network administrator, I want** to export ping data and outage reports to CSV **so that** I can analyse them in Excel or share with external consultants when needed.
+
+**Context:** While most analysis happens within the app, Jeff occasionally needs to share data with vendors or create custom reports for management. CSV is the universal format that works everywhere.
 
 ```gherkin
 Feature: Export Data to CSV
@@ -675,14 +646,16 @@ Backbone: Monitor Network Devices
 
 ## Sprint Allocation
 
-| Sprint | Stories | KSB Focus |
-|--------|---------|-----------|
-| 1 | 1.1 (basic), 2.1 (basic) | S1, S2, S3, S10 |
-| 2 | 1.1 (extended), 1.2, 1.3 | S1, S3, S4, S7 |
-| 3 | 2.1 (extended), 2.2 | S2, S8, S16, K4 |
-| 4 | 4.1, 4.2 (basic) | S3, S6, S16, K10 |
-| 5 | 3.1, 3.2 | S5, S6, S13, B6 |
-| 6 | 4.2 (extended), polish | S10, S12, S15 |
+| Sprint | Stories | KSB Focus | Discussion Context |
+|--------|---------|-----------|-------------------|
+| 1 | 1.1 (basic), 2.1 (basic) | S1, S2, S3, S10 | Greg and Jeff agreed: start with single device, prove the concept works |
+| 2 | 1.1 (extended), 1.2, 1.3 | S1, S3, S4, S7 | Jeff needs multi-device support for his 40-50 infrastructure devices |
+| 3 | 2.1 (extended), 2.2 | S2, S8, S16, K4 | Visual dashboard priority — Jeff wants to spot issues at a glance |
+| 4 | 4.1, 4.2 (basic) | S3, S6, S16, K10 | Historical data for capacity planning discussions with management |
+| 5 | 3.1, 3.2 | S5, S6, S13, B6 | Alerting phase — Jeff wants proactive notifications, not just reactive checks |
+| 6 | 4.2 (extended), polish | S10, S12, S15 | Production packaging and documentation for handover to Jeff |
+
+**Note:** Sprint allocation reflects discussions between Greg (apprentice) and Jeff (employer/mentor/user) during backlog refinement sessions.
 
 ---
 
