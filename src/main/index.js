@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, session } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
@@ -80,6 +80,30 @@ function createWindow() {
   }
 }
 
+// Security: Configure Content Security Policy headers
+function configureCSP() {
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self';" +
+          "script-src 'self' 'unsafe-inline';" +
+          "style-src 'self' 'unsafe-inline';" +
+          "img-src 'self' data: https:;" +
+          "font-src 'self';" +
+          "connect-src 'self';" +
+          "media-src 'self';" +
+          "object-src 'none';" +
+          "frame-src 'none';" +
+          "base-uri 'self';" +
+          "form-action 'self';"
+        ]
+      }
+    })
+  })
+}
+
 // Quit when all windows are closed, except on macOS
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -96,6 +120,9 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(async () => {
+  // Security: Apply CSP headers to prevent XSS and code injection
+  configureCSP()
+
   // Register IPC handlers (optional - allows MVP to run without database)
   try {
     const { registerDatabaseHandlers } = await import('./ipc-handlers.js')
@@ -103,7 +130,7 @@ app.whenReady().then(async () => {
   } catch (error) {
     console.warn('Database not available, running without persistence:', error.message)
   }
-  
+
   createWindow()
 })
 
