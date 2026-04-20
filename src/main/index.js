@@ -137,22 +137,4 @@ app.whenReady().then(async () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
-// Security: Whitelist of valid IPC channels
-const VALID_CHANNELS = [
-  'device:create',
-  'device:read',
-  'device:update',
-  'device:delete',
-  'ping:start',
-  'ping:stop',
-  'ping:startAll',
-  'ping:stopAll',
-  'ping:status',
-  'ping:record',
-  'ping:getRecent',
-  'ping:getStats',
-  'ping:result',
-  'db:stats'
-]
-
 // IPC handlers are now registered in registerDatabaseHandlers()
