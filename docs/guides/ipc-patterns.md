@@ -14,34 +14,34 @@ The Network Device Monitor uses Electron's IPC system to enable communication be
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         Main Process                         │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                 IPC Handlers (main)                  │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌───────────┐  │   │
-│  │  │ Device CRUD  │  │ Ping Control │  │ Database  │  │   │
-│  │  │  Handlers    │  │   Handlers   │  │  Queries  │  │   │
-│  │  └──────────────┘  └──────────────┘  └───────────┘  │   │
-│  └─────────────────────────────────────────────────────┘   │
+│                         Main Process                        │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │                 IPC Handlers (main)                 │    │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌───────────┐  │    │
+│  │  │ Device CRUD  │  │ Ping Control │  │ Database  │  │    │
+│  │  │  Handlers    │  │   Handlers   │  │  Queries  │  │    │
+│  │  └──────────────┘  └──────────────┘  └───────────┘  │    │
+│  └─────────────────────────────────────────────────────┘    │
 │                          ↑↓ ipcMain                         │
-│                    Secure IPC Bridge                         │
+│                    Secure IPC Bridge                        │
 │                          ↑↓ contextBridge                   │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │               Preload Script Bridge                  │   │
-│  │         (src/preload/index.js)                       │   │
-│  │                                                      │   │
-│  │   ┌─────────────────────────────────────────────┐   │   │
-│  │   │         VALID_CHANNELS Whitelist            │   │   │
-│  │   │  ['device:create', 'device:read', ...]      │   │   │
-│  │   └─────────────────────────────────────────────┘   │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │               Preload Script Bridge                 │    │
+│  │         (src/preload/index.js)                      │    │
+│  │                                                     │    │
+│  │   ┌─────────────────────────────────────────────┐   │    │
+│  │   │         VALID_CHANNELS Whitelist            │   │    │
+│  │   │  ['device:create', 'device:read', ...]      │   │    │
+│  │   └─────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────┘    │
 │                          ↑↓ ipcRenderer                     │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │               Renderer Process                       │   │
-│  │         (Frontend UI - React/Vue)                  │   │
-│  │                                                      │   │
-│  │   window.electronAPI.createDevice(data)              │   │
-│  │   window.electronAPI.getPingStatus(deviceId)         │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │               Renderer Process                      │    │
+│  │         (Frontend UI - React/Vue)                   │    │
+│  │                                                     │    │
+│  │   window.electronAPI.createDevice(data)             │    │
+│  │   window.electronAPI.getPingStatus(deviceId)        │    │
+│  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
