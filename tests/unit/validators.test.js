@@ -77,7 +77,7 @@ describe('Device Name Validation', () => {
     ['a'.repeat(100), true],  // Max length
     ['Server-01_Main', true],
     ['Printer 3rd Floor', true]
-  ])('accepts valid name: "%s"', (name, expected) => {
+  ])('accepts valid name: "%s"', (name) => {
     expect(validators.deviceName(name)).toBeTruthy()
   })
 
