@@ -12,6 +12,7 @@ const VALID_CHANNELS = [
   'device:read',
   'device:update',
   'device:delete',
+  'device:getWithStatus',
   // Ping operations  
   'ping:start',
   'ping:stop',
@@ -33,6 +34,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getDevices: (id) => ipcRenderer.invoke('device:read', id),
   updateDevice: (id, updates) => ipcRenderer.invoke('device:update', id, updates),
   deleteDevice: (id) => ipcRenderer.invoke('device:delete', id),
+  getDeviceWithStatus: (id) => ipcRenderer.invoke('device:getWithStatus', id),
   
   // Ping monitoring
   startPing: (deviceId, ipAddress, intervalMs) => ipcRenderer.invoke('ping:start', deviceId, ipAddress, intervalMs),

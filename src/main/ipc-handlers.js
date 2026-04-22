@@ -154,7 +154,40 @@ export async function registerDatabaseHandlers() {
       return { success: false, error: error.message }
     }
   })
-  
+
+  ipcMain.handle('device:getWithStatus', async (event, id) => {
+    try {
+      if (id) {
+        // Single device with status
+        const result = db.getDeviceWithLatestStatus(id)
+        if (!result) {
+          return { success: false, error: 'Device not found' }
+        }
+        // Transform device fields to camelCase, preserve nested objects
+        const data = {
+          ...transformDevice(result),
+          latestPing: result.latestPing,
+          activeOutage: result.activeOutage,
+          status: result.status
+        }
+        return { success: true, data }
+      } else {
+        // All devices with status
+        const results = db.getAllDevicesWithLatestStatus()
+        const data = results.map(device => ({
+          ...transformDevice(device),
+          latestPing: device.latestPing,
+          activeOutage: device.activeOutage,
+          status: device.status
+        }))
+        return { success: true, data }
+      }
+    } catch (error) {
+      console.error('Error getting device with status:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
   ipcMain.handle('device:update', async (event, id, updates) => {
     try {
       // Map camelCase field names to snake_case for database

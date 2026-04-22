@@ -411,14 +411,112 @@ class DatabaseManager {
   getLatestPing(deviceId) {
     const stmt = this.getStatement(
       'getLatestPing',
-      `SELECT * FROM ping_logs 
-       WHERE device_id = ? 
-       ORDER BY timestamp DESC 
+      `SELECT * FROM ping_logs
+       WHERE device_id = ?
+       ORDER BY timestamp DESC
        LIMIT 1`
     )
     return stmt.get(deviceId)
   }
-  
+
+  /**
+   * Get device with latest status information
+   * @param {number} deviceId - Device ID
+   * @returns {Object|null} Device with latest ping and active outage, or null
+   */
+  getDeviceWithLatestStatus(deviceId) {
+    // Get device details
+    const device = this.getDevice(deviceId)
+    if (!device) return null
+
+    // Get latest ping
+    const latestPing = this.getLatestPing(deviceId)
+
+    // Get active outage
+    const activeOutage = this.getActiveOutage(deviceId)
+
+    // Determine current status
+    let status = 'unknown'
+    if (latestPing) {
+      status = latestPing.success ? 'online' : 'offline'
+    }
+    if (activeOutage) {
+      status = 'outage'
+    }
+
+    return {
+      ...device,
+      latestPing,
+      activeOutage,
+      status
+    }
+  }
+
+  /**
+   * Get all active devices with their latest status
+   * @returns {Array} List of devices with latest ping information
+   */
+  getAllDevicesWithLatestStatus() {
+    const stmt = this.getStatement(
+      'getAllDevicesWithLatestStatus',
+      `SELECT
+        d.*,
+        pl.latency_ms as latest_latency,
+        pl.success as latest_success,
+        pl.timestamp as latest_ping_time,
+        o.id as outage_id,
+        o.severity as outage_severity,
+        o.start_time as outage_start
+      FROM devices d
+      LEFT JOIN (
+        SELECT device_id, latency_ms, success, timestamp
+        FROM ping_logs
+        WHERE (device_id, timestamp) IN (
+          SELECT device_id, MAX(timestamp)
+          FROM ping_logs
+          GROUP BY device_id
+        )
+      ) pl ON d.id = pl.device_id
+      LEFT JOIN outages o ON d.id = o.device_id AND o.end_time IS NULL
+      WHERE d.is_active = 1
+      ORDER BY d.created_at DESC`
+    )
+
+    const rows = stmt.all()
+
+    return rows.map(row => {
+      // Determine status
+      let status = 'unknown'
+      if (row.latest_success !== null) {
+        status = row.latest_success ? 'online' : 'offline'
+      }
+      if (row.outage_id) {
+        status = 'outage'
+      }
+
+      return {
+        id: row.id,
+        name: row.name,
+        ipAddress: row.ip_address,
+        deviceType: row.device_type,
+        location: row.location,
+        isActive: row.is_active,
+        createdAt: row.created_at,
+        latestPing: row.latest_ping_time ? {
+          latencyMs: row.latest_latency,
+          success: row.latest_success,
+          timestamp: row.latest_ping_time
+        } : null,
+        activeOutage: row.outage_id ? {
+          id: row.outage_id,
+          severity: row.outage_severity,
+          startTime: row.outage_start
+        } : null,
+        status
+      }
+    })
+  }
+
   // ========== Outage Operations ==========
   
   /**
