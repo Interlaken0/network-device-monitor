@@ -160,4 +160,116 @@ describe('Database Advanced Queries', () => {
       expect(content).toMatch(/getStatement\(\s*'getAllDevicesWithLatestStatus'/)
     })
   })
+
+  describe('getDeviceStatusSummary Method', () => {
+    it('method exists in database.js', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toContain('getDeviceStatusSummary(deviceId, hours = 24)')
+    })
+
+    it('returns null for non-existent device', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/if \(!device\) return null/)
+    })
+
+    it('calculates total pings in time window', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/COUNT\(\*\) as total_pings/)
+    })
+
+    it('calculates successful and failed ping counts', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/SUM\(CASE WHEN success = 1 THEN 1 ELSE 0 END\) as successful_pings/)
+      expect(content).toMatch(/SUM\(CASE WHEN success = 0 THEN 1 ELSE 0 END\) as failed_pings/)
+    })
+
+    it('calculates average, min, max latency for successful pings', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/AVG\(CASE WHEN success = 1 THEN latency_ms END\) as avg_latency/)
+      expect(content).toMatch(/MIN\(CASE WHEN success = 1 THEN latency_ms END\) as min_latency/)
+      expect(content).toMatch(/MAX\(CASE WHEN success = 1 THEN latency_ms END\) as max_latency/)
+    })
+
+    it('filters pings by time window', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/timestamp > datetime\('now', \?\)/)
+    })
+
+    it('counts outages in time window', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/COUNT\(\*\) as outage_count/)
+      expect(content).toMatch(/FROM outages/)
+      expect(content).toMatch(/start_time > datetime\('now', \?\)/)
+    })
+
+    it('calculates total downtime including ongoing outages', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/CASE WHEN end_time IS NULL THEN/)
+      expect(content).toMatch(/julianday\('now'\) - julianday\(start_time\)/)
+      expect(content).toMatch(/ELSE duration_seconds END\) as total_downtime_seconds/)
+    })
+
+    it('calculates uptime percentage', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/const uptimePercent = totalPings > 0/)
+      expect(content).toMatch(/successfulPings \/ totalPings/)
+    })
+
+    it('returns comprehensive summary object', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/return \{\s*deviceId,/)
+      expect(content).toMatch(/totalPings,/)
+      expect(content).toMatch(/successfulPings,/)
+      expect(content).toMatch(/uptimePercent,/)
+      expect(content).toMatch(/averageLatencyMs:/)
+      expect(content).toMatch(/outageCount:/)
+      expect(content).toMatch(/totalDowntimeSeconds:/)
+    })
+
+    it('handles null values when no ping data exists', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/uptimePercent = totalPings > 0/)
+      expect(content).toMatch(/:\s*null/)
+    })
+  })
+
+  describe('IPC Handler: device:getStatusSummary', () => {
+    const ipcPath = path.join(__dirname, '../../src/main/ipc-handlers.js')
+
+    it('handler exists', () => {
+      const content = fs.readFileSync(ipcPath, 'utf-8')
+      expect(content).toContain("ipcMain.handle('device:getStatusSummary'")
+    })
+
+    it('validates deviceId parameter', () => {
+      const content = fs.readFileSync(ipcPath, 'utf-8')
+      expect(content).toMatch(/if \(!deviceId\)/)
+      expect(content).toMatch(/error: 'Device ID is required'/)
+    })
+
+    it('returns error for non-existent device', () => {
+      const content = fs.readFileSync(ipcPath, 'utf-8')
+      expect(content).toMatch(/if \(!summary\)/)
+      expect(content).toMatch(/error: 'Device not found'/)
+    })
+
+    it('passes hours parameter to database method', () => {
+      const content = fs.readFileSync(ipcPath, 'utf-8')
+      expect(content).toMatch(/getDeviceStatusSummary\(deviceId, hours\)/)
+    })
+  })
+
+  describe('Preload: getDeviceStatusSummary', () => {
+    const preloadPath = path.join(__dirname, '../../src/preload/index.js')
+
+    it('exposed to renderer', () => {
+      const content = fs.readFileSync(preloadPath, 'utf-8')
+      expect(content).toContain('getDeviceStatusSummary: (id, hours) => ipcRenderer.invoke')
+    })
+
+    it('channel is whitelisted', () => {
+      const content = fs.readFileSync(preloadPath, 'utf-8')
+      expect(content).toContain("'device:getStatusSummary'")
+    })
+  })
 })

@@ -517,6 +517,70 @@ class DatabaseManager {
     })
   }
 
+  /**
+   * Get comprehensive status summary for a device
+   * @param {number} deviceId - Device ID
+   * @param {number} [hours=24] - Time window in hours
+   * @returns {Object|null} Status summary or null if device not found
+   */
+  getDeviceStatusSummary(deviceId, hours = 24) {
+    // Check device exists
+    const device = this.getDevice(deviceId)
+    if (!device) return null
+
+    // Get ping statistics for the time window
+    const statsStmt = this.getStatement(
+      'getDeviceStatusSummaryStats',
+      `SELECT
+        COUNT(*) as total_pings,
+        SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful_pings,
+        SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failed_pings,
+        AVG(CASE WHEN success = 1 THEN latency_ms END) as avg_latency,
+        MIN(CASE WHEN success = 1 THEN latency_ms END) as min_latency,
+        MAX(CASE WHEN success = 1 THEN latency_ms END) as max_latency
+      FROM ping_logs
+      WHERE device_id = ?
+        AND timestamp > datetime('now', ?)`
+    )
+
+    const stats = statsStmt.get(deviceId, `-${hours} hours`)
+
+    // Get recent outages in the time window
+    const outagesStmt = this.getStatement(
+      'getRecentOutages',
+      `SELECT COUNT(*) as outage_count,
+        SUM(CASE WHEN end_time IS NULL THEN
+          (julianday('now') - julianday(start_time)) * 86400
+          ELSE duration_seconds END) as total_downtime_seconds
+      FROM outages
+      WHERE device_id = ?
+        AND start_time > datetime('now', ?)`
+    )
+
+    const outages = outagesStmt.get(deviceId, `-${hours} hours`)
+
+    // Calculate uptime percentage
+    const totalPings = stats.total_pings || 0
+    const successfulPings = stats.successful_pings || 0
+    const uptimePercent = totalPings > 0
+      ? Math.round((successfulPings / totalPings) * 100)
+      : null
+
+    return {
+      deviceId,
+      hours,
+      totalPings,
+      successfulPings,
+      failedPings: stats.failed_pings || 0,
+      uptimePercent,
+      averageLatencyMs: stats.avg_latency,
+      minLatencyMs: stats.min_latency,
+      maxLatencyMs: stats.max_latency,
+      outageCount: outages?.outage_count || 0,
+      totalDowntimeSeconds: outages?.total_downtime_seconds || 0
+    }
+  }
+
   // ========== Outage Operations ==========
   
   /**

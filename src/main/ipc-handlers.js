@@ -269,19 +269,37 @@ export async function registerDatabaseHandlers() {
     try {
       const avgLatency = db.getAverageLatency(deviceId, hours)
       const latest = db.getLatestPing(deviceId)
-      return { 
-        success: true, 
-        data: { 
+      return {
+        success: true,
+        data: {
           averageLatency: avgLatency,
           latestPing: latest
-        } 
+        }
       }
     } catch (error) {
       console.error('Error getting ping stats:', error)
       return { success: false, error: error.message }
     }
   })
-  
+
+  ipcMain.handle('device:getStatusSummary', async (event, deviceId, hours) => {
+    try {
+      if (!deviceId) {
+        return { success: false, error: 'Device ID is required' }
+      }
+
+      const summary = db.getDeviceStatusSummary(deviceId, hours)
+      if (!summary) {
+        return { success: false, error: 'Device not found' }
+      }
+
+      return { success: true, data: summary }
+    } catch (error) {
+      console.error('Error getting device status summary:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
   // ========== Stats Handler ==========
   
   ipcMain.handle('db:stats', async () => {
