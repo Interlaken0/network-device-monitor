@@ -19,7 +19,7 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=unit",
     "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=integration",
-    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage && node scripts/fix-coverage-timezone.js",
     "changelog": "npx --yes standard-version@latest --skip.tag --dry-run",
     "release": "npx --yes standard-version@latest",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",

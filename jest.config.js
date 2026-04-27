@@ -20,7 +20,9 @@ export default {
   // Module name mapping for aliases and mocks
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^electron$': '<rootDir>/tests/mocks/electron.js'
+    '^electron$': '<rootDir>/tests/mocks/electron.js',
+    '^ping$': '<rootDir>/tests/mocks/ping.js',
+    '^better-sqlite3$': '<rootDir>/tests/mocks/better-sqlite3.js'
   },
   
   // Native ESM support

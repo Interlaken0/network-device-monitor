@@ -149,7 +149,11 @@ class PingService {
 
     } catch (error) {
       console.error(`Ping error for ${this.ipAddress}:`, error.message)
-      
+
+      // Update statistics
+      this.stats.totalPings++
+      this.stats.failedPings++
+
       const pingData = {
         deviceId: this.deviceId,
         latencyMs: null,

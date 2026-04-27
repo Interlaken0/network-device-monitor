@@ -1,71 +1,69 @@
-import { describe, it, expect } from '@jest/globals'
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals'
+import { NetworkMonitor } from '@/main/network-monitor.js'
+import ping from 'ping'
 
 describe('NetworkMonitor', () => {
-  const filePath = path.join(__dirname, '../../src/main/network-monitor.js')
+  let monitor
 
-  it('file exists', () => {
-    expect(fs.existsSync(filePath)).toBe(true)
+  beforeEach(() => {
+    monitor = new NetworkMonitor()
+    jest.clearAllMocks()
   })
 
-  it('exports NetworkMonitor class', () => {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).toContain('class NetworkMonitor')
-    expect(content).toContain('export default networkMonitor')
+  afterEach(() => {
+    monitor.stopAll()
   })
 
-  it('has startMonitoring method', () => {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).toContain('startMonitoring(')
+  it('creates instance with empty services map', () => {
+    expect(monitor.services.size).toBe(0)
   })
 
-  it('has stopMonitoring method', () => {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).toContain('stopMonitoring(')
+  it('isMonitoring returns false for unmonitored device', () => {
+    expect(monitor.isMonitoring(999)).toBe(false)
   })
 
-  it('has monitorAllDevices method', () => {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).toContain('monitorAllDevices(')
+  it('getDeviceStatus returns null for unmonitored device', () => {
+    expect(monitor.getDeviceStatus(999)).toBeNull()
   })
 
-  it('has stopAll method', () => {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).toContain('stopAll()')
+  it('stopMonitoring returns false when device not monitored', () => {
+    expect(monitor.stopMonitoring(999)).toBe(false)
   })
 
-  it('has getAllStatuses method', () => {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).toContain('getAllStatuses()')
+  it('stopAll handles empty services map', () => {
+    expect(() => monitor.stopAll()).not.toThrow()
+    expect(monitor.services.size).toBe(0)
   })
 
-  it('imports PingService', () => {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).toContain("import PingService from './ping-service.js'")
+  it('getMonitoredCount returns correct count', () => {
+    expect(monitor.getMonitoredCount()).toBe(0)
   })
 
-  it('imports database', () => {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).toContain("import { getDatabase }")
+  it('getAllStatuses returns empty array initially', () => {
+    expect(monitor.getAllStatuses()).toEqual([])
   })
 
-  it('manages multiple services with Map', () => {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).toContain('Map()')
-    expect(content).toContain('this.services')
+  it('has callback hooks for status changes', () => {
+    expect(monitor.onDeviceStatusChange).toBeNull()
+    expect(monitor.onAggregateStatus).toBeNull()
+  })
+
+  it('can set callback hooks', () => {
+    const deviceCallback = jest.fn()
+    const aggregateCallback = jest.fn()
+
+    monitor.onDeviceStatusChange = deviceCallback
+    monitor.onAggregateStatus = aggregateCallback
+
+    expect(monitor.onDeviceStatusChange).toBe(deviceCallback)
+    expect(monitor.onAggregateStatus).toBe(aggregateCallback)
   })
 })
 
 describe('NetworkMonitor Singleton', () => {
-  const filePath = path.join(__dirname, '../../src/main/network-monitor.js')
-
-  it('exports singleton instance', () => {
-    const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).toContain('new NetworkMonitor()')
+  it('exports singleton instance as default', async () => {
+    const networkModule = await import('@/main/network-monitor.js')
+    expect(networkModule.default).toBeDefined()
+    expect(networkModule.default).toBeInstanceOf(NetworkMonitor)
   })
 })
