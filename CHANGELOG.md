@@ -2,7 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### [0.1.2](https://github.com/Interlaken0/network-device-monitor/compare/v0.1.1...v0.1.2) (2026-04-10)
+## [0.2.0](https://github.com/Interlaken0/network-device-monitor/compare/v0.1.3...v0.2.0) (2026-04-29)
+
+### Features
+
+* **database:** add advanced status queries with IPC exposure ([cf981ef](https://github.com/Interlaken0/network-device-monitor/commit/cf981ef855fd08b3e66d6931b7a7bfa83f3549c4))
+* **database:** add device status summary query ([5cd7c47](https://github.com/Interlaken0/network-device-monitor/commit/5cd7c47ab5c581fcbeb23913b57c699d23a7e04d))
+* **ui:** add device edit functionality ([84c4775](https://github.com/Interlaken0/network-device-monitor/commit/84c4775706d6abfcd0edce16793280ab12132460))
+
+### Bug Fixes
+
+* correct README inaccuracies - filename case, missing test file, build output notes ([2641757](https://github.com/Interlaken0/network-device-monitor/commit/26417570edf714f95d3fd4a183ff3809ec5d8b73))
+* remove unused variables to resolve lint warnings ([#9](https://github.com/Interlaken0/network-device-monitor/issues/9)) ([7abbb9a](https://github.com/Interlaken0/network-device-monitor/commit/7abbb9ad5a3d0a0eda132968cf48e6a7526d385a))
+* **test:** update IPC lifecycle tests to match current handler implementation ([#5](https://github.com/Interlaken0/network-device-monitor/issues/5)) ([a42a8ef](https://github.com/Interlaken0/network-device-monitor/commit/a42a8ef9c86212fd546e24b8c0e8390974ec0407))
+* **ui:** replace native confirm with custom modal to prevent focus loss after delete ([37590a6](https://github.com/Interlaken0/network-device-monitor/commit/37590a6df9e8f508120c2fd5f0aa31dac781b916))
+
+## [0.1.2](https://github.com/Interlaken0/network-device-monitor/compare/v0.1.1...v0.1.2) (2026-04-10)
 
 
 ### Features
@@ -23,7 +38,7 @@ All notable changes to this project will be documented in this file. See [standa
 * **main:** make database optional for MVP - dynamic import of ipc-handlers ([c4e0c69](https://github.com/Interlaken0/network-device-monitor/commit/c4e0c69938d454e4c6a898c3365ddbf8ce695023))
 * **reporter:** correct duration calculation in test summary ([e289ced](https://github.com/Interlaken0/network-device-monitor/commit/e289ced6138561643482e3322bd659cf92b508b1))
 
-### 0.1.1 (2026-04-08)
+## [0.1.1](https://github.com/Interlaken0/network-device-monitor/releases/tag/v0.1.1) (2026-04-08)
 
 
 ### Features
