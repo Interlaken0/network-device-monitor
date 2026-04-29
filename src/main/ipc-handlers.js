@@ -117,15 +117,15 @@ export async function registerDatabaseHandlers() {
     try {
       // Validate input
       if (!validators.deviceName(data.name)) {
-        throw new Error('Invalid device name: must be 1-100 characters')
+        throw new Error('Invalid device name')
       }
       
       if (!validators.ipAddress(data.ipAddress)) {
-        throw new Error('Invalid IP address format')
+        throw new Error('Invalid IP address')
       }
       
       if (!validators.deviceType(data.deviceType)) {
-        throw new Error('Invalid device type: must be server, router, printer, or switch')
+        throw new Error('Invalid device type')
       }
       
       // Check for duplicate IP
