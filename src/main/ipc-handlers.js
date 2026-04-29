@@ -117,15 +117,15 @@ export async function registerDatabaseHandlers() {
     try {
       // Validate input
       if (!validators.deviceName(data.name)) {
-        throw new Error('Invalid device name: must be 1-100 characters')
+        throw new Error('Invalid device name')
       }
       
       if (!validators.ipAddress(data.ipAddress)) {
-        throw new Error('Invalid IP address format')
+        throw new Error('Invalid IP address')
       }
       
       if (!validators.deviceType(data.deviceType)) {
-        throw new Error('Invalid device type: must be server, router, printer, or switch')
+        throw new Error('Invalid device type')
       }
       
       // Check for duplicate IP
@@ -154,7 +154,40 @@ export async function registerDatabaseHandlers() {
       return { success: false, error: error.message }
     }
   })
-  
+
+  ipcMain.handle('device:getWithStatus', async (event, id) => {
+    try {
+      if (id) {
+        // Single device with status
+        const result = db.getDeviceWithLatestStatus(id)
+        if (!result) {
+          return { success: false, error: 'Device not found' }
+        }
+        // Transform device fields to camelCase, preserve nested objects
+        const data = {
+          ...transformDevice(result),
+          latestPing: result.latestPing,
+          activeOutage: result.activeOutage,
+          status: result.status
+        }
+        return { success: true, data }
+      } else {
+        // All devices with status
+        const results = db.getAllDevicesWithLatestStatus()
+        const data = results.map(device => ({
+          ...transformDevice(device),
+          latestPing: device.latestPing,
+          activeOutage: device.activeOutage,
+          status: device.status
+        }))
+        return { success: true, data }
+      }
+    } catch (error) {
+      console.error('Error getting device with status:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
   ipcMain.handle('device:update', async (event, id, updates) => {
     try {
       // Map camelCase field names to snake_case for database
@@ -236,19 +269,37 @@ export async function registerDatabaseHandlers() {
     try {
       const avgLatency = db.getAverageLatency(deviceId, hours)
       const latest = db.getLatestPing(deviceId)
-      return { 
-        success: true, 
-        data: { 
+      return {
+        success: true,
+        data: {
           averageLatency: avgLatency,
           latestPing: latest
-        } 
+        }
       }
     } catch (error) {
       console.error('Error getting ping stats:', error)
       return { success: false, error: error.message }
     }
   })
-  
+
+  ipcMain.handle('device:getStatusSummary', async (event, deviceId, hours) => {
+    try {
+      if (!deviceId) {
+        return { success: false, error: 'Device ID is required' }
+      }
+
+      const summary = db.getDeviceStatusSummary(deviceId, hours)
+      if (!summary) {
+        return { success: false, error: 'Device not found' }
+      }
+
+      return { success: true, data: summary }
+    } catch (error) {
+      console.error('Error getting device status summary:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
   // ========== Stats Handler ==========
   
   ipcMain.handle('db:stats', async () => {

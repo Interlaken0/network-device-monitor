@@ -4,6 +4,8 @@
  * Provides mock implementations of Electron APIs for testing
  */
 
+import { jest } from '@jest/globals'
+
 export const app = {
   getPath: jest.fn((name) => {
     const paths = {

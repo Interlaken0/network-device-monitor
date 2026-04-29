@@ -33,19 +33,19 @@ describe('IPC Device Lifecycle Integration', () => {
     it('validates device name length', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
       expect(content).toContain('validators.deviceName(data.name)')
-      expect(content).toContain('Invalid device name: must be 1-100 characters')
+      expect(content).toContain('Invalid device name')
     })
 
     it('validates IP address format', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
       expect(content).toContain('validators.ipAddress(data.ipAddress)')
-      expect(content).toContain("throw new Error('Invalid IP address format')")
+      expect(content).toContain("throw new Error('Invalid IP address')")
     })
 
     it('validates device type', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
       expect(content).toContain('validators.deviceType(data.deviceType)')
-      expect(content).toContain("Invalid device type: must be server, router, printer, or switch")
+      expect(content).toContain("Invalid device type")
     })
 
     it('checks for duplicate IP before creation', () => {
