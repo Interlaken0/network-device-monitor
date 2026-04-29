@@ -1,6 +1,6 @@
 {
   "name": "amf-network-monitor",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "Real-time network infrastructure monitoring application for JJ Confederation Ltd",
   "type": "module",
   "main": "./out/main/index.js",
