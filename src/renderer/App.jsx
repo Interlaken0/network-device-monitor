@@ -1,15 +1,32 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import './App.css'
+import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
 
 function App() {
-  const [devices, setDevices] = useState([])
-  const [newDevice, setNewDevice] = useState({ name: '', ipAddress: '' })
-  const [pingResults, setPingResults] = useState({})
-  const [isMonitoring, setIsMonitoring] = useState({})
-  const [error, setError] = useState(null)
-  const [editingDevice, setEditingDevice] = useState(null)
-  const [editForm, setEditForm] = useState({ name: '', ipAddress: '', deviceType: 'server', location: '' })
-  const [deleteModal, setDeleteModal] = useState({ show: false, deviceId: null, deviceName: '' })
+  // Zustand store selectors
+  const devices = useDeviceStore(selectDevices)
+  const error = useDeviceStore(selectError)
+  const pingResults = useDeviceStore(selectPingResults)
+  const isMonitoring = useDeviceStore(selectIsMonitoring)
+  const editingDevice = useDeviceStore(selectEditingDevice)
+  const editForm = useDeviceStore(selectEditForm)
+  const deleteModal = useDeviceStore(selectDeleteModal)
+  const newDeviceForm = useDeviceStore(selectNewDeviceForm)
+
+  // Zustand actions
+  const loadDevices = useDeviceStore((state) => state.loadDevices)
+  const setPingResult = useDeviceStore((state) => state.setPingResult)
+  const setNewDeviceForm = useDeviceStore((state) => state.setNewDeviceForm)
+  const setEditingDevice = useDeviceStore((state) => state.setEditingDevice)
+  const setEditForm = useDeviceStore((state) => state.setEditForm)
+  const showDeleteModal = useDeviceStore((state) => state.showDeleteModal)
+  const hideDeleteModal = useDeviceStore((state) => state.hideDeleteModal)
+  const createDevice = useDeviceStore((state) => state.createDevice)
+  const updateDevice = useDeviceStore((state) => state.updateDevice)
+  const deleteDevice = useDeviceStore((state) => state.deleteDevice)
+  const startMonitoring = useDeviceStore((state) => state.startMonitoring)
+  const stopMonitoring = useDeviceStore((state) => state.stopMonitoring)
+  const clearError = useDeviceStore((state) => state.clearError)
 
   // Load devices on mount
   useEffect(() => {
@@ -20,163 +37,39 @@ function App() {
   useEffect(() => {
     const cleanup = window.electronAPI?.onPingResult((result) => {
       if (result && result.deviceId) {
-        setPingResults(prev => ({
-          ...prev,
-          [result.deviceId]: result
-        }))
+        setPingResult(result.deviceId, result)
       }
     })
 
     return () => {
       if (cleanup) cleanup()
     }
-  }, [])
+  }, [setPingResult])
 
-  const loadDevices = async () => {
-    try {
-      const result = await window.electronAPI?.getDevices()
-      if (result?.success) {
-        setDevices(result.data || [])
-      }
-    } catch (err) {
-      setError('Failed to load devices: ' + err.message)
-    }
-  }
-
+  // Event handlers using store actions
   const handleCreateDevice = async (e) => {
     e.preventDefault()
-    if (!newDevice.name || !newDevice.ipAddress) {
-      setError('Please enter both name and IP address')
-      return
-    }
-
-    try {
-      const result = await window.electronAPI?.createDevice({
-        name: newDevice.name,
-        ipAddress: newDevice.ipAddress,
-        deviceType: 'server',
-        isActive: true
-      })
-
-      if (result?.success) {
-        setNewDevice({ name: '', ipAddress: '' })
-        setError(null)
-        await loadDevices()
-      } else {
-        setError(result?.error || 'Failed to create device')
-      }
-    } catch (err) {
-      setError('Error creating device: ' + err.message)
-    }
+    await createDevice()
   }
 
   const handleDeleteClick = (device) => {
-    setDeleteModal({ show: true, deviceId: device.id, deviceName: device.name })
-  }
-
-  const handleCancelDelete = () => {
-    setDeleteModal({ show: false, deviceId: null, deviceName: '' })
+    showDeleteModal(device.id, device.name)
   }
 
   const handleConfirmDelete = async () => {
-    const id = deleteModal.deviceId
-    setDeleteModal({ show: false, deviceId: null, deviceName: '' })
-
-    try {
-      // Stop monitoring if active
-      if (isMonitoring[id]) {
-        await handleStopMonitoring(id)
-      }
-
-      const result = await window.electronAPI?.deleteDevice(id)
-      if (result?.success) {
-        await loadDevices()
-      } else {
-        setError(result?.error || 'Failed to delete device')
-      }
-    } catch (err) {
-      setError('Error deleting device: ' + err.message)
-    }
+    await deleteDevice()
   }
 
   const handleEditClick = (device) => {
-    setEditingDevice(device.id)
-    setEditForm({
-      name: device.name || '',
-      ipAddress: device.ip_address || device.ipAddress || '',
-      deviceType: device.device_type || device.deviceType || 'server',
-      location: device.location || ''
-    })
-  }
-
-  const handleCancelEdit = () => {
-    setEditingDevice(null)
-    setEditForm({ name: '', ipAddress: '', deviceType: 'server', location: '' })
+    setEditingDevice(device)
   }
 
   const handleUpdateDevice = async (e, deviceId) => {
     e.preventDefault()
-
-    if (!editForm.name || !editForm.ipAddress) {
-      setError('Please enter both name and IP address')
-      return
-    }
-
-    try {
-      const result = await window.electronAPI?.updateDevice(deviceId, {
-        name: editForm.name,
-        ipAddress: editForm.ipAddress,
-        deviceType: editForm.deviceType,
-        location: editForm.location
-      })
-
-      if (result?.success) {
-        setEditingDevice(null)
-        setEditForm({ name: '', ipAddress: '', deviceType: 'server', location: '' })
-        setError(null)
-        await loadDevices()
-      } else {
-        setError(result?.error || 'Failed to update device')
-      }
-    } catch (err) {
-      setError('Error updating device: ' + err.message)
-    }
+    await updateDevice(deviceId)
   }
 
-  const handleStartMonitoring = async (device) => {
-    try {
-      const result = await window.electronAPI?.startPing?.(
-        device.id,
-        device.ip_address || device.ipAddress,
-        5000
-      )
-
-      if (result?.success) {
-        setIsMonitoring(prev => ({ ...prev, [device.id]: true }))
-        setError(null)
-      } else {
-        setError(result?.error || 'Failed to start monitoring')
-      }
-    } catch (err) {
-      // Fallback: just mark as monitoring for UI demo
-      setIsMonitoring(prev => ({ ...prev, [device.id]: true }))
-      setError('Monitoring started (demo mode)')
-    }
-  }
-
-  const handleStopMonitoring = async (deviceId) => {
-    try {
-      await window.electronAPI?.stopPing?.(deviceId)
-      setIsMonitoring(prev => ({ ...prev, [deviceId]: false }))
-      setPingResults(prev => {
-        const updated = { ...prev }
-        delete updated[deviceId]
-        return updated
-      })
-    } catch (err) {
-      setIsMonitoring(prev => ({ ...prev, [deviceId]: false }))
-    }
-  }
+  const resetEditForm = useDeviceStore((state) => state.resetEditForm)
 
   const getLatencyColor = (latencyMs) => {
     if (!latencyMs) return 'latency-unknown'
@@ -195,7 +88,7 @@ function App() {
 
       <main>
         {error && (
-          <div className="error-banner" onClick={() => setError(null)}>
+          <div className="error-banner" onClick={() => clearError()}>
             {error}
           </div>
         )}
@@ -207,14 +100,14 @@ function App() {
             <input
               type="text"
               placeholder="Device Name (e.g., Router-1)"
-              value={newDevice.name}
-              onChange={(e) => setNewDevice(prev => ({ ...prev, name: e.target.value }))}
+              value={newDeviceForm.name}
+              onChange={(e) => setNewDeviceForm({ name: e.target.value })}
             />
             <input
               type="text"
               placeholder="IP Address (e.g., 192.168.1.1)"
-              value={newDevice.ipAddress}
-              onChange={(e) => setNewDevice(prev => ({ ...prev, ipAddress: e.target.value }))}
+              value={newDeviceForm.ipAddress}
+              onChange={(e) => setNewDeviceForm({ ipAddress: e.target.value })}
             />
             <button type="submit" className="btn-primary">Add Device</button>
           </form>
@@ -265,7 +158,7 @@ function App() {
                         />
                         <div className="edit-actions">
                           <button type="submit" className="btn-save">Save</button>
-                          <button type="button" onClick={handleCancelEdit} className="btn-cancel">Cancel</button>
+                          <button type="button" onClick={() => setEditingDevice(null)} className="btn-cancel">Cancel</button>
                         </div>
                       </form>
                     ) : (
@@ -300,7 +193,7 @@ function App() {
                     <div className="device-actions">
                       {!monitoring ? (
                         <button 
-                          onClick={() => handleStartMonitoring(device)}
+                          onClick={() => startMonitoring(device)}
                           className="btn-start"
                           title="Start Monitoring"
                         >
@@ -308,7 +201,7 @@ function App() {
                         </button>
                       ) : (
                         <button 
-                          onClick={() => handleStopMonitoring(device.id)}
+                          onClick={() => stopMonitoring(device.id)}
                           className="btn-stop"
                           title="Stop Monitoring"
                         >
@@ -339,12 +232,12 @@ function App() {
 
         {/* Delete Confirmation Modal */}
         {deleteModal.show && (
-          <div className="modal-overlay" onClick={handleCancelDelete}>
+          <div className="modal-overlay" onClick={() => hideDeleteModal()}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <h3>Confirm Delete</h3>
               <p>Are you sure you want to delete <strong>{deleteModal.deviceName}</strong>?</p>
               <div className="modal-actions">
-                <button onClick={handleCancelDelete} className="btn-cancel">Cancel</button>
+                <button onClick={() => hideDeleteModal()} className="btn-cancel">Cancel</button>
                 <button onClick={handleConfirmDelete} className="btn-delete">Delete</button>
               </div>
             </div>
