@@ -29,10 +29,12 @@ function App() {
   const stopMonitoring = useDeviceStore((state) => state.stopMonitoring)
   const clearError = useDeviceStore((state) => state.clearError)
 
-  // Load devices on mount
+  // Load devices on mount - loadDevices is stable Zustand action
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     loadDevices()
   }, [])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Listen for ping results
   useEffect(() => {
@@ -74,9 +76,9 @@ function App() {
 
   const getLatencyColor = (latencyMs) => {
     if (!latencyMs) return 'latency-unknown'
-    if (latencyMs < 50) return 'latency-excellent'
-    if (latencyMs < 100) return 'latency-good'
-    if (latencyMs < 200) return 'latency-fair'
+    if (latencyMs < 10) return 'latency-excellent'
+    if (latencyMs < 50) return 'latency-good'
+    if (latencyMs < 150) return 'latency-fair'
     return 'latency-poor'
   }
 
@@ -162,7 +164,7 @@ function App() {
                         />
                         <div className="edit-actions">
                           <button type="submit" className="btn-save">Save</button>
-                          <button type="button" onClick={() => setEditingDevice(null)} className="btn-cancel">Cancel</button>
+                          <button type="button" onClick={() => { setEditingDevice(null); resetEditForm() }} className="btn-cancel">Cancel</button>
                         </div>
                       </form>
                     ) : (

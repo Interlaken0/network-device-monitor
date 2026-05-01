@@ -16,9 +16,9 @@ import { devtools } from 'zustand/middleware'
  */
 const calculateStatusFromLatency = (latencyMs) => {
   if (!latencyMs) return 'unknown'
-  if (latencyMs < 50) return 'excellent'
-  if (latencyMs < 100) return 'good'
-  if (latencyMs < 200) return 'fair'
+  if (latencyMs < 10) return 'excellent'
+  if (latencyMs < 50) return 'good'
+  if (latencyMs < 150) return 'fair'
   return 'poor'
 }
 

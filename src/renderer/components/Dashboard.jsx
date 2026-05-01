@@ -12,7 +12,7 @@ import { useDeviceStore, selectDevices, selectDeviceStatus } from '../stores/dev
 
 /**
  * Calculates status category based on latency thresholds.
- * Green < 50ms, Amber 50-200ms, Red > 200ms.
+ * Excellent < 10ms, Good 10-50ms, Fair 50-150ms, Poor > 150ms.
  *
  * @param {number|null} latencyMs - Latency in milliseconds
  * @param {boolean} isOnline - Whether device is responding
@@ -21,9 +21,9 @@ import { useDeviceStore, selectDevices, selectDeviceStatus } from '../stores/dev
 const calculateStatusFromLatency = (latencyMs, isOnline) => {
   if (!isOnline) return 'offline'
   if (!latencyMs) return 'unknown'
-  if (latencyMs < 50) return 'excellent'
-  if (latencyMs < 100) return 'good'
-  if (latencyMs < 200) return 'fair'
+  if (latencyMs < 10) return 'excellent'
+  if (latencyMs < 50) return 'good'
+  if (latencyMs < 150) return 'fair'
   return 'poor'
 }
 
