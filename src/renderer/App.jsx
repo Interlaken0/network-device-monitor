@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import './App.css'
+import Dashboard from './components/Dashboard'
 import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
 
 function App() {
@@ -92,6 +93,9 @@ function App() {
             {error}
           </div>
         )}
+
+        {/* Dashboard */}
+        <Dashboard />
 
         {/* Add Device Form */}
         <section className="card">

@@ -528,3 +528,206 @@ ul li:last-child {
     grid-template-columns: 1fr;
   }
 }
+
+/* Dashboard Styles */
+.dashboard {
+  grid-column: 1 / -1;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard.empty {
+  padding: 2rem;
+  text-align: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.dashboard-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+}
+
+.device-count {
+  background: #e9ecef;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+/* Device Grid - CSS Grid Layout */
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .device-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Device Status Card */
+.device-status-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.device-status-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.device-status-card.monitoring {
+  border-color: #28a745;
+}
+
+.device-status-card.inactive {
+  border-color: #6c757d;
+  opacity: 0.8;
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.device-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: #495057;
+  text-transform: uppercase;
+}
+
+.device-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.device-meta h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.device-type {
+  font-size: 0.8rem;
+  color: #6c757d;
+  text-transform: capitalize;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.online {
+  background: #28a745;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.offline {
+  background: #dc3545;
+}
+
+.status-dot.inactive {
+  background: #6c757d;
+}
+
+/* Card Body */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ip-address {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #495057;
+  background: #f8f9fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.device-location {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+/* Latency Display */
+.latency-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.latency-display .latency-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.latency-display .status-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Status Colour Classes for Card Border */
+.device-status-card.status-online {
+  border-left: 4px solid #28a745;
+}
+
+.device-status-card.status-good {
+  border-left: 4px solid #ffc107;
+}
+
+.device-status-card.status-warning {
+  border-left: 4px solid #fd7e14;
+}
+
+.device-status-card.status-offline {
+  border-left: 4px solid #dc3545;
+}
+
+.device-status-card.status-unknown,
+.device-status-card.status-inactive {
+  border-left: 4px solid #6c757d;
+}
