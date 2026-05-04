@@ -731,3 +731,156 @@ ul li:last-child {
 .device-status-card.status-inactive {
   border-left: 4px solid #6c757d;
 }
+
+/* Latency Chart Styles */
+.latency-chart-container {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 2px solid #e0e0e0;
+  margin-top: 1.5rem;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.chart-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2c3e50;
+}
+
+.time-range-selector {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.time-range-btn {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #dee2e6;
+  background: white;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.time-range-btn:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.time-range-btn.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.chart-body {
+  min-height: 300px;
+}
+
+.chart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #6c757d;
+}
+
+.chart-empty-state p {
+  margin: 0.25rem 0;
+}
+
+.chart-empty-state .empty-hint {
+  font-size: 0.9rem;
+  color: #adb5bd;
+}
+
+/* Custom Tooltip */
+.chart-tooltip {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip-time {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.tooltip-latency {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.tooltip-latency.latency-excellent {
+  color: #28a745;
+}
+
+.tooltip-latency.latency-good {
+  color: #856404;
+}
+
+.tooltip-latency.latency-fair {
+  color: #744210;
+}
+
+.tooltip-latency.latency-poor {
+  color: #721c24;
+}
+
+.chart-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e0e0e0;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.data-points,
+.avg-latency {
+  font-weight: 500;
+}
+
+/* Chart grid responsive */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .time-range-selector {
+    width: 100%;
+  }
+
+  .time-range-btn {
+    flex: 1;
+  }
+
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}

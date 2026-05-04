@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import DeviceStatusCard from './DeviceStatusCard'
+import LatencyChart from './LatencyChart'
 import { useDeviceStore, selectDevices, selectDeviceStatus } from '../stores/deviceStore'
 
 /**
@@ -94,6 +95,19 @@ function Dashboard() {
             isMonitoring={isMonitoring[device.id] || false}
           />
         ))}
+      </div>
+
+      {/* Latency Charts for monitored devices */}
+      <div className="chart-grid">
+        {devices
+          .filter((device) => isMonitoring[device.id])
+          .map((device) => (
+            <LatencyChart
+              key={`chart-${device.id}`}
+              deviceId={device.id}
+              deviceName={device.name}
+            />
+          ))}
       </div>
     </section>
   )
