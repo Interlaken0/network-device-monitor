@@ -14,9 +14,8 @@ function App() {
   const deleteModal = useDeviceStore(selectDeleteModal)
   const newDeviceForm = useDeviceStore(selectNewDeviceForm)
 
-  // Zustand actions
+  // Zustand actions - use getState() for stable references in effects
   const loadDevices = useDeviceStore((state) => state.loadDevices)
-  const setPingResult = useDeviceStore((state) => state.setPingResult)
   const setNewDeviceForm = useDeviceStore((state) => state.setNewDeviceForm)
   const setEditingDevice = useDeviceStore((state) => state.setEditingDevice)
   const setEditForm = useDeviceStore((state) => state.setEditForm)
@@ -36,18 +35,19 @@ function App() {
   }, [])
   /* eslint-enable react-hooks/exhaustive-deps */
 
-  // Listen for ping results
+  // Listen for ping results - use getState() to avoid unstable selector dependencies
   useEffect(() => {
     const cleanup = window.electronAPI?.onPingResult((result) => {
       if (result && result.deviceId) {
-        setPingResult(result.deviceId, result)
+        // Use getState() for stable action reference (no closure issues)
+        useDeviceStore.getState().setPingResult(result.deviceId, result)
       }
     })
 
     return () => {
       if (cleanup) cleanup()
     }
-  }, [setPingResult])
+  }, [])
 
   // Event handlers using store actions
   const handleCreateDevice = async (e) => {
@@ -263,7 +263,7 @@ function App() {
                   <div key={deviceId} className={`ping-entry ${result.success ? 'success' : 'failure'}`}>
                     <div className="ping-info">
                       <span className="device-name" title={device?.name}>{device?.name || 'Unknown'}</span>
-                      <span className="ip-address">{device?.ipAddress || 'Unknown IP'}</span>
+                      <span className="ip-address">{device?.ip_address || device?.ipAddress || 'Unknown IP'}</span>
                     </div>
                     <div className="ping-details">
                       <span className="timestamp">{timeString}</span>

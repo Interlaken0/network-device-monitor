@@ -1,8 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { shallow } from 'zustand/shallow'
 import DeviceStatusCard from './DeviceStatusCard'
 import LatencyChart from './LatencyChart'
-import { useDeviceStore, selectDevices, selectDeviceStatus } from '../stores/deviceStore'
+import { useDeviceStore, selectDevices, selectIsMonitoring } from '../stores/deviceStore'
 
 /**
  * Dashboard displays a grid of device status cards.
@@ -36,20 +37,25 @@ const calculateStatusFromLatency = (latencyMs, isOnline) => {
  * Isolates re-renders to individual cards rather than entire dashboard.
  */
 function DeviceCardWrapper({ device, isMonitoring }) {
-  const deviceStatus = useDeviceStore(selectDeviceStatus(device.id))
-
-  const status = calculateStatusFromLatency(
-    deviceStatus.latencyMs,
-    deviceStatus.isOnline
+  // Subscribe only to this device's ping result using stable selector with shallow comparison
+  // This prevents re-renders when other devices' ping results update
+  const pingResult = useDeviceStore(
+    (state) => state.pingResults[device.id],
+    shallow
   )
+
+  // Calculate status from ping result
+  const isOnline = pingResult?.success || false
+  const latencyMs = pingResult?.latencyMs || null
+  const status = isMonitoring ? calculateStatusFromLatency(latencyMs, isOnline) : 'unknown'
 
   return (
     <div role="listitem">
       <DeviceStatusCard
         device={device}
-        latency={deviceStatus.latencyMs}
+        latency={latencyMs}
         status={status}
-        isOnline={deviceStatus.isOnline}
+        isOnline={isOnline}
         isMonitoring={isMonitoring}
       />
     </div>
@@ -61,7 +67,7 @@ function DeviceCardWrapper({ device, isMonitoring }) {
  */
 function Dashboard() {
   const devices = useDeviceStore(selectDevices)
-  const isMonitoring = useDeviceStore((state) => state.isMonitoring)
+  const isMonitoring = useDeviceStore(selectIsMonitoring)
 
   if (devices.length === 0) {
     return (

@@ -357,26 +357,6 @@ export const selectIsMonitoring = (state) => state.isMonitoring
 /** @returns {Object} Map of deviceId to ping history array */
 export const selectPingHistory = (state) => state.pingHistory
 
-/**
- * Gets ping history for a specific device with time-range filtering.
- *
- * @param {number} deviceId - Device identifier
- * @param {string} timeRange - Time range: '5min', '1hr', or '24hr'
- * @returns {Array} Filtered ping history entries
- */
-export const selectPingHistoryForDevice = (deviceId, timeRange = '5min') => (state) => {
-  const history = state.pingHistory[deviceId] || []
-  const now = Date.now()
-  const ranges = {
-    '5min': 5 * 60 * 1000,
-    '1hr': 60 * 60 * 1000,
-    '24hr': 24 * 60 * 60 * 1000
-  }
-  const cutoff = now - (ranges[timeRange] || ranges['5min'])
-
-  return history.filter((entry) => new Date(entry.timestamp).getTime() > cutoff)
-}
-
 /** @returns {Object} New device form state */
 export const selectNewDeviceForm = (state) => state.newDeviceForm
 

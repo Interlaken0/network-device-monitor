@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import PropTypes from 'prop-types'
+import { shallow } from 'zustand/shallow'
 import {
   LineChart,
   Line,
@@ -9,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts'
-import { useDeviceStore, selectPingHistoryForDevice } from '../stores/deviceStore'
+import { useDeviceStore } from '../stores/deviceStore'
 
 /**
  * Time range options for chart filtering.
@@ -97,15 +98,25 @@ CustomTooltip.propTypes = {
  */
 function LatencyChart({ deviceId, deviceName }) {
   const [timeRange, setTimeRange] = useState('5min')
-  const pingHistory = useDeviceStore(selectPingHistoryForDevice(deviceId, timeRange))
 
+  // Subscribe only to this device's raw ping history (stable selector)
+  const rawHistory = useDeviceStore(
+    (state) => state.pingHistory[deviceId] || [],
+    shallow
+  )
+
+  // Filter and format data based on time range
   const chartData = useMemo(() => {
-    return pingHistory.map((entry) => ({
+    const now = Date.now()
+    const cutoff = now - (TIME_RANGES[timeRange]?.ms || TIME_RANGES['5min'].ms)
+    const filtered = rawHistory.filter((entry) => new Date(entry.timestamp).getTime() > cutoff)
+
+    return filtered.map((entry) => ({
       time: formatChartTime(entry.timestamp, timeRange),
       latency: entry.latencyMs || 0,
       timestamp: entry.timestamp
     }))
-  }, [pingHistory, timeRange])
+  }, [rawHistory, timeRange])
 
   const lineColour = getLineColour(chartData)
   const hasData = chartData.length > 0
