@@ -139,17 +139,17 @@ function App() {
                           type="text"
                           placeholder="Device Name"
                           value={editForm.name}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                          onChange={(e) => setEditForm({ name: e.target.value })}
                         />
                         <input
                           type="text"
                           placeholder="IP Address"
                           value={editForm.ipAddress}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, ipAddress: e.target.value }))}
+                          onChange={(e) => setEditForm({ ipAddress: e.target.value })}
                         />
                         <select
                           value={editForm.deviceType}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, deviceType: e.target.value }))}
+                          onChange={(e) => setEditForm({ deviceType: e.target.value })}
                         >
                           <option value="server">Server</option>
                           <option value="router">Router</option>
@@ -160,7 +160,7 @@ function App() {
                           type="text"
                           placeholder="Location (optional)"
                           value={editForm.location}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                          onChange={(e) => setEditForm({ location: e.target.value })}
                         />
                         <div className="edit-actions">
                           <button type="submit" className="btn-save">Save</button>
