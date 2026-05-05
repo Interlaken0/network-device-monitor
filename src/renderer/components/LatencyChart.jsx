@@ -11,6 +11,7 @@ import {
   ResponsiveContainer
 } from 'recharts'
 import { useDeviceStore } from '../stores/deviceStore'
+import { useThemeStore } from '../stores/themeStore'
 
 /**
  * Time range options for chart filtering.
@@ -38,14 +39,22 @@ const formatChartTime = (timestamp, timeRange) => {
 }
 
 /**
- * Determines line colour based on average latency.
+ * Determines line colour based on average latency and theme.
+ * Colours match the warning badge colours exactly.
  *
  * @param {Array} data - Chart data points
+ * @param {string} theme - Current theme ('light' or 'dark')
  * @returns {string} Colour hex code
  */
-const getLineColour = (data) => {
+const getLineColour = (data, theme) => {
   if (data.length === 0) return '#6c757d'
   const avg = data.reduce((sum, d) => sum + d.latency, 0) / data.length
+  if (theme === 'dark') {
+    if (avg < 10) return '#5dd879'
+    if (avg < 50) return '#ffd54f'
+    if (avg < 150) return '#fd7e14'
+    return '#ff6b6b'
+  }
   if (avg < 10) return '#28a745'
   if (avg < 50) return '#ffc107'
   if (avg < 150) return '#fd7e14'
@@ -99,6 +108,9 @@ CustomTooltip.propTypes = {
 function LatencyChart({ deviceId, deviceName }) {
   const [timeRange, setTimeRange] = useState('5min')
 
+  // Get current theme for colour matching
+  const theme = useThemeStore((state) => state.theme)
+
   // Subscribe only to this device's raw ping history (stable selector)
   const rawHistory = useDeviceStore(
     (state) => state.pingHistory[deviceId] || [],
@@ -118,7 +130,7 @@ function LatencyChart({ deviceId, deviceName }) {
     }))
   }, [rawHistory, timeRange])
 
-  const lineColour = getLineColour(chartData)
+  const lineColour = getLineColour(chartData, theme)
   const hasData = chartData.length > 0
 
   return (

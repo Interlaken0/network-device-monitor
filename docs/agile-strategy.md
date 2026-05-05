@@ -277,6 +277,11 @@ removeListener: (channel, callback) => {
    - ARIA labels on status indicators
    - Screen reader announcements
    - Keyboard navigation
+   
+6. **UI Polish:** Theme system and visual refinements (2 pts)
+   - Dark/light mode toggle with CSS custom properties
+   - Chart colour coding matching warning badge system
+   - Header styling and branding updates
 
 **Sprint 3 Deliverable:** Visual dashboard showing real-time status and historical trends for all monitored devices.
 

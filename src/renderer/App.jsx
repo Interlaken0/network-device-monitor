@@ -2,8 +2,18 @@ import React, { useEffect } from 'react'
 import './App.css'
 import Dashboard from './components/Dashboard'
 import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
+import { useThemeStore, selectTheme, selectToggleTheme } from './stores/themeStore'
 
 function App() {
+  // Theme store
+  const theme = useThemeStore(selectTheme)
+  const toggleTheme = useThemeStore(selectToggleTheme)
+
+  // Initialise theme on mount
+  useEffect(() => {
+    useThemeStore.getState().initialiseTheme()
+  }, [])
+
   // Zustand store selectors
   const devices = useDeviceStore(selectDevices)
   const error = useDeviceStore(selectError)
@@ -84,9 +94,16 @@ function App() {
 
   return (
     <div className="app">
+      <button
+        className="theme-toggle"
+        onClick={toggleTheme}
+        title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+        aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+      >
+        {theme === 'light' ? '\u263D' : '\u2600'}
+      </button>
       <header>
-        <h1>AMF Network Monitor</h1>
-        <p className="subtitle">Sprint 1 MVP - Single Device Monitoring</p>
+        <h1>AMF Network Device Monitor</h1>
       </header>
 
       <main>
