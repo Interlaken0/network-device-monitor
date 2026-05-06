@@ -103,47 +103,66 @@ function DeviceStatusCard({ device, latency, status, isOnline, isMonitoring }) {
   const statusConfig = getStatusConfig(status, isOnline, isMonitoring)
   const deviceType = formatDeviceType(device.device_type || device.deviceType)
 
+  // Generate status description for screen readers
+  const statusDescription = isMonitoring
+    ? `${device.name}: ${statusConfig.label}${latency ? `, latency ${latency} milliseconds` : ''}`
+    : `${device.name}: Not monitoring`
+
   return (
     <article
       className={`device-status-card ${statusConfig.colourClass} ${isMonitoring ? 'monitoring' : 'inactive'}`}
       data-device-id={device.id}
-      aria-label={`${device.name}: ${statusConfig.label}${latency ? `, ${latency}ms` : ''}`}
+      role="region"
+      aria-label={`${deviceType} ${device.name}`}
+      tabIndex={0}
     >
+      {/* Screen reader only status announcement */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {statusDescription}
+      </div>
+
       <header className="card-header">
         <div className="device-icon" aria-hidden="true">
           {deviceType.charAt(0)}
         </div>
         <div className="device-meta">
-          <h3 className="device-name" title={device.name}>
+          <h3 className="device-name" id={`device-name-${device.id}`}>
             {device.name}
           </h3>
-          <span className="device-type">{deviceType}</span>
+          <span className="device-type" aria-label={`Device type: ${deviceType}`}>
+            {deviceType}
+          </span>
         </div>
         <div
           className={`status-dot ${isOnline ? 'online' : isMonitoring ? 'offline' : 'inactive'}`}
-          aria-hidden="true"
+          aria-label={`Status: ${statusConfig.label}`}
+          role="img"
         />
       </header>
 
       <div className="card-body">
-        <div className="ip-address" title="IP Address">
+        <div className="ip-address" aria-label={`IP Address: ${device.ip_address || device.ipAddress}`}>
           {device.ip_address || device.ipAddress}
         </div>
 
         {device.location && (
-          <div className="device-location" title="Location">
+          <div className="device-location" aria-label={`Location: ${device.location}`}>
             {device.location}
           </div>
         )}
 
-        <div className={`latency-display ${statusConfig.badgeClass}`}>
+        <div
+          className={`latency-display ${statusConfig.badgeClass}`}
+          role="status"
+          aria-label={statusConfig.showLatency ? `Latency: ${latency}ms, ${statusConfig.label}` : statusConfig.label}
+        >
           {statusConfig.showLatency && latency !== null ? (
             <>
-              <span className="latency-value">{latency}ms</span>
-              <span className="status-label">{statusConfig.label}</span>
+              <span className="latency-value" aria-hidden="true">{latency}ms</span>
+              <span className="status-label" aria-hidden="true">{statusConfig.label}</span>
             </>
           ) : (
-            <span className="status-label">{statusConfig.label}</span>
+            <span className="status-label" aria-hidden="true">{statusConfig.label}</span>
           )}
         </div>
       </div>

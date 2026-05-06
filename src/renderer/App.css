@@ -1108,3 +1108,179 @@ ul li:last-child {
     display: none;
   }
 }
+
+/* Day 5 - Accessibility Styles */
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus styles for keyboard navigation */
+.device-card-wrapper:focus-visible {
+  outline: 3px solid #007bff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
+}
+
+.device-card-wrapper:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Ensure interactive elements have visible focus */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* Skip link for keyboard users */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #007bff;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .device-status-card {
+    border-width: 3px;
+  }
+  
+  .status-dot {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .device-card-wrapper,
+  .device-card-wrapper.clickable:hover,
+  .latency-chart-container,
+  .chart-container {
+    transition: none;
+    animation: none;
+  }
+  
+  .status-dot.online {
+    animation: none;
+  }
+}
+
+/* Theme Variables for Day 5 UI Polish */
+:root {
+  /* Light theme (default) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-card: #ffffff;
+  --text-primary: #2c3e50;
+  --text-secondary: #6c757d;
+  --border-color: #dee2e6;
+  --accent-primary: #007bff;
+  --accent-success: #28a745;
+  --accent-warning: #ffc107;
+  --accent-danger: #dc3545;
+  
+  /* Status colours */
+  --status-excellent: #d4edda;
+  --status-excellent-text: #155724;
+  --status-good: #fff3cd;
+  --status-good-text: #856404;
+  --status-fair: #ffeaa7;
+  --status-fair-text: #744210;
+  --status-poor: #f8d7da;
+  --status-poor-text: #721c24;
+  --status-unknown: #e9ecef;
+  --status-unknown-text: #6c757d;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #0f3460;
+  --text-primary: #e94560;
+  --text-secondary: #a0a0a0;
+  --border-color: #2d3748;
+  --accent-primary: #4fd1c5;
+  --accent-success: #68d391;
+  --accent-warning: #f6e05e;
+  --accent-danger: #fc8181;
+  
+  --status-excellent: #1c4532;
+  --status-excellent-text: #68d391;
+  --status-good: #744210;
+  --status-good-text: #f6e05e;
+  --status-fair: #7c2d12;
+  --status-fair-text: #fdba74;
+  --status-poor: #742a2a;
+  --status-poor-text: #fc8181;
+  --status-unknown: #2d3748;
+  --status-unknown-text: #a0a0a0;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--bg-secondary);
+  transform: scale(1.1);
+}
+
+/* Apply theme variables */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.device-status-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+/* Chart colour coding matching status badges */
+.recharts-line .recharts-curve {
+  stroke-width: 2;
+}
+
+.chart-colour-excellent {
+  color: var(--status-excellent-text);
+}
+
+.chart-colour-good {
+  color: var(--status-good-text);
+}
+
+.chart-colour-fair {
+  color: var(--status-fair-text);
+}
+
+.chart-colour-poor {
+  color: var(--status-poor-text);
+}

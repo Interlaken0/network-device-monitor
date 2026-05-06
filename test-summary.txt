@@ -1,8 +1,8 @@
-Test Summary - 5 May 2026 at 13:43:39 BST
+Test Summary - 6 May 2026 at 16:27:00 BST
 ==================================================
 
 Total: 353 | Passed: 353 | Failed: 0 | Skipped: 0
-Duration: 1.96s
+Duration: 2.02s
 
 
 \tests\unit\ping-service.test.js
@@ -99,110 +99,6 @@ Duration: 1.96s
   ✓ recordPing accepts null latencyMs for failed pings
   ✓ ping_logs table allows null latency_ms
 
-\tests\integration\ipc-device-lifecycle.test.js
-----------------------------------------
-  ✓ ipc-handlers.js exists
-  ✓ registers device:create handler
-  ✓ validates device name length
-  ✓ validates IP address format
-  ✓ validates device type
-  ✓ checks for duplicate IP before creation
-  ✓ calls db.createDevice after validation
-  ✓ returns success response with created device
-  ✓ returns error response on failure
-  ✓ registers device:read handler
-  ✓ reads single device by ID when provided
-  ✓ reads all devices when no ID provided
-  ✓ uses conditional for ID parameter
-  ✓ returns success response with device data
-  ✓ registers device:update handler
-  ✓ accepts device ID and updates object
-  ✓ validates IP address if provided in updates
-  ✓ checks for duplicate IP when IP is changed
-  ✓ prevents update to existing IP of another device
-  ✓ calls db.updateDevice with validated data
-  ✓ returns update result with changes count
-  ✓ registers device:delete handler
-  ✓ calls db.deleteDevice for soft delete
-  ✓ returns success response with delete result
-  ✓ includes comment about outage check for production
-  ✓ defines validators object with ipAddress function
-  ✓ ipAddress validator uses IPv4 regex
-  ✓ ipAddress validator uses IPv6 regex
-  ✓ deviceName validator checks length constraints
-  ✓ deviceType validator checks against allowed types
-  ✓ all handlers use try-catch blocks
-  ✓ catches errors and returns structured error response
-  ✓ logs errors to console for debugging
-  ✓ error responses include error message string
-  ✓ exports registerDatabaseHandlers function
-  ✓ gets database instance at start of registration
-  ✓ imports ipcMain from electron
-  ✓ imports database module
-  ✓ imports network monitor
-  ✓ exports default with registerDatabaseHandlers
-  ✓ all successful responses include success: true
-  ✓ all error responses include success: false
-  ✓ successful responses include data property
-  ✓ complete CRUD handlers are defined in sequence
-  ✓ create handler accepts data object with expected properties
-  ✓ update handler separates ID from updates
-
-\tests\unit\network-monitor.test.js
-----------------------------------------
-  ✓ creates instance with empty services map
-  ✓ isMonitoring returns false for unmonitored device
-  ✓ getDeviceStatus returns null for unmonitored device
-  ✓ stopMonitoring returns false when device not monitored
-  ✓ stopAll handles empty services map
-  ✓ getMonitoredCount returns correct count
-  ✓ getAllStatuses returns empty array initially
-  ✓ has callback hooks for status changes
-  ✓ can set callback hooks
-  ✓ exports singleton instance as default
-
-\tests\unit\database-runtime.test.js
-----------------------------------------
-  ✓ database.js exists
-  ✓ getDeviceWithLatestStatus method exists
-  ✓ getAllDevicesWithLatestStatus method exists
-  ✓ getDeviceStatusSummary method exists with default hours
-  ✓ getDeviceWithLatestStatus checks device exists
-  ✓ getDeviceStatusSummary checks device exists
-  ✓ filters only active devices
-  ✓ uses LEFT JOIN for optional ping data
-  ✓ uses LEFT JOIN for optional outage data
-  ✓ maps result rows to camelCase objects
-  ✓ returns array of mapped device objects
-  ✓ uses COUNT for total pings
-  ✓ uses SUM with CASE for successful ping count
-  ✓ uses SUM with CASE for failed ping count
-  ✓ uses AVG for average latency (successful only)
-  ✓ uses MIN for minimum latency (successful only)
-  ✓ uses MAX for maximum latency (successful only)
-  ✓ filters by timestamp for time window
-  ✓ calculates uptime percentage in JavaScript
-  ✓ handles zero pings with null uptime
-  ✓ uses OR replacement for total downtime calculation
-  ✓ filters outages by time window
-  ✓ getDeviceWithLatestStatus determines status from latest ping
-  ✓ overrides status when active outage exists
-  ✓ getDeviceWithLatestStatus reuses existing getDevice statement
-  ✓ getDeviceWithLatestStatus reuses existing getLatestPing statement
-  ✓ getDeviceWithLatestStatus reuses existing getActiveOutage statement
-  ✓ getDeviceStatusSummary uses dedicated prepared statement
-  ✓ getDeviceStatusSummary uses dedicated outage statement
-  ✓ returns null for invalid device IDs
-  ✓ handles OR replacement for stats with default 0
-  ✓ handles OR replacement for outages with default 0
-  ✓ ipc-handlers.js exists
-  ✓ device:getWithStatus validates id parameter
-  ✓ device:getStatusSummary validates deviceId parameter
-  ✓ handlers pass hours parameter correctly
-  ✓ handlers use try-catch for error handling
-  ✓ getDeviceWithLatestStatus returns combined object
-  ✓ getDeviceStatusSummary returns comprehensive object
-
 \tests\unit\network-edge-cases.test.js
 ----------------------------------------
   ✓ ping-service.js exists
@@ -264,6 +160,164 @@ Duration: 1.96s
   ✓ returns count of successfully started devices
   ✓ restartAll stops before starting
 
+\tests\unit\database-runtime.test.js
+----------------------------------------
+  ✓ database.js exists
+  ✓ getDeviceWithLatestStatus method exists
+  ✓ getAllDevicesWithLatestStatus method exists
+  ✓ getDeviceStatusSummary method exists with default hours
+  ✓ getDeviceWithLatestStatus checks device exists
+  ✓ getDeviceStatusSummary checks device exists
+  ✓ filters only active devices
+  ✓ uses LEFT JOIN for optional ping data
+  ✓ uses LEFT JOIN for optional outage data
+  ✓ maps result rows to camelCase objects
+  ✓ returns array of mapped device objects
+  ✓ uses COUNT for total pings
+  ✓ uses SUM with CASE for successful ping count
+  ✓ uses SUM with CASE for failed ping count
+  ✓ uses AVG for average latency (successful only)
+  ✓ uses MIN for minimum latency (successful only)
+  ✓ uses MAX for maximum latency (successful only)
+  ✓ filters by timestamp for time window
+  ✓ calculates uptime percentage in JavaScript
+  ✓ handles zero pings with null uptime
+  ✓ uses OR replacement for total downtime calculation
+  ✓ filters outages by time window
+  ✓ getDeviceWithLatestStatus determines status from latest ping
+  ✓ overrides status when active outage exists
+  ✓ getDeviceWithLatestStatus reuses existing getDevice statement
+  ✓ getDeviceWithLatestStatus reuses existing getLatestPing statement
+  ✓ getDeviceWithLatestStatus reuses existing getActiveOutage statement
+  ✓ getDeviceStatusSummary uses dedicated prepared statement
+  ✓ getDeviceStatusSummary uses dedicated outage statement
+  ✓ returns null for invalid device IDs
+  ✓ handles OR replacement for stats with default 0
+  ✓ handles OR replacement for outages with default 0
+  ✓ ipc-handlers.js exists
+  ✓ device:getWithStatus validates id parameter
+  ✓ device:getStatusSummary validates deviceId parameter
+  ✓ handlers pass hours parameter correctly
+  ✓ handlers use try-catch for error handling
+  ✓ getDeviceWithLatestStatus returns combined object
+  ✓ getDeviceStatusSummary returns comprehensive object
+
+\tests\unit\csp-security.test.js
+----------------------------------------
+  ✓ index.js exists
+  ✓ defines configureCSP function
+  ✓ uses session.defaultSession.webRequest.onHeadersReceived
+  ✓ callback modifies response headers
+  ✓ includes Content-Security-Policy header
+  ✓ restricts default-src to self
+  ✓ restricts script-src appropriately
+  ✓ restricts style-src appropriately
+  ✓ restricts img-src to safe sources
+  ✓ blocks object-src entirely
+  ✓ blocks frame-src entirely
+  ✓ restricts connect-src to self
+  ✓ restricts font-src to self
+  ✓ restricts base-uri to self
+  ✓ restricts form-action to self
+  ✓ calls configureCSP in app.whenReady
+  ✓ has security comment before CSP call
+  ✓ imports session from electron
+  ✓ session is used in configureCSP
+  ✓ spreads existing response headers
+  ✓ preserves existing headers when adding CSP
+
+\tests\integration\ipc-device-lifecycle.test.js
+----------------------------------------
+  ✓ ipc-handlers.js exists
+  ✓ registers device:create handler
+  ✓ validates device name length
+  ✓ validates IP address format
+  ✓ validates device type
+  ✓ checks for duplicate IP before creation
+  ✓ calls db.createDevice after validation
+  ✓ returns success response with created device
+  ✓ returns error response on failure
+  ✓ registers device:read handler
+  ✓ reads single device by ID when provided
+  ✓ reads all devices when no ID provided
+  ✓ uses conditional for ID parameter
+  ✓ returns success response with device data
+  ✓ registers device:update handler
+  ✓ accepts device ID and updates object
+  ✓ validates IP address if provided in updates
+  ✓ checks for duplicate IP when IP is changed
+  ✓ prevents update to existing IP of another device
+  ✓ calls db.updateDevice with validated data
+  ✓ returns update result with changes count
+  ✓ registers device:delete handler
+  ✓ calls db.deleteDevice for soft delete
+  ✓ returns success response with delete result
+  ✓ includes comment about outage check for production
+  ✓ defines validators object with ipAddress function
+  ✓ ipAddress validator uses IPv4 regex
+  ✓ ipAddress validator uses IPv6 regex
+  ✓ deviceName validator checks length constraints
+  ✓ deviceType validator checks against allowed types
+  ✓ all handlers use try-catch blocks
+  ✓ catches errors and returns structured error response
+  ✓ logs errors to console for debugging
+  ✓ error responses include error message string
+  ✓ exports registerDatabaseHandlers function
+  ✓ gets database instance at start of registration
+  ✓ imports ipcMain from electron
+  ✓ imports database module
+  ✓ imports network monitor
+  ✓ exports default with registerDatabaseHandlers
+  ✓ all successful responses include success: true
+  ✓ all error responses include success: false
+  ✓ successful responses include data property
+  ✓ complete CRUD handlers are defined in sequence
+  ✓ create handler accepts data object with expected properties
+  ✓ update handler separates ID from updates
+
+\tests\unit\database-advanced-queries.test.js
+----------------------------------------
+  ✓ database.js exists
+  ✓ method exists in database.js
+  ✓ returns device with latest ping and active outage
+  ✓ returns null for non-existent device
+  ✓ calculates status based on ping and outage
+  ✓ spreads device properties with status info
+  ✓ method exists in database.js
+  ✓ returns array of devices with status
+  ✓ filters only active devices
+  ✓ uses LEFT JOIN to get latest ping per device
+  ✓ joins active outages
+  ✓ maps results with camelCase fields
+  ✓ determines status for each device
+  ✓ ipc-handlers.js exists
+  ✓ has device:getWithStatus handler
+  ✓ handler supports single device lookup
+  ✓ handler supports all devices lookup
+  ✓ transforms device fields to camelCase
+  ✓ preserves status objects in response
+  ✓ preload script exists
+  ✓ has device:getWithStatus in valid channels
+  ✓ exposes getDeviceWithStatus to renderer
+  ✓ uses prepared statement for batch query
+  ✓ method exists in database.js
+  ✓ returns null for non-existent device
+  ✓ calculates total pings in time window
+  ✓ calculates successful and failed ping counts
+  ✓ calculates average, min, max latency for successful pings
+  ✓ filters pings by time window
+  ✓ counts outages in time window
+  ✓ calculates total downtime including ongoing outages
+  ✓ calculates uptime percentage
+  ✓ returns comprehensive summary object
+  ✓ handles null values when no ping data exists
+  ✓ handler exists
+  ✓ validates deviceId parameter
+  ✓ returns error for non-existent device
+  ✓ passes hours parameter to database method
+  ✓ exposed to renderer
+  ✓ channel is whitelisted
+
 \tests\unit\validators.test.js
 ----------------------------------------
   ✓ accepts valid IPv4: 192.168.1.1
@@ -315,72 +369,18 @@ Duration: 1.96s
   ✓ rejects invalid type: SERVER
   ✓ rejects invalid type: Server
 
-\tests\unit\csp-security.test.js
+\tests\unit\network-monitor.test.js
 ----------------------------------------
-  ✓ index.js exists
-  ✓ defines configureCSP function
-  ✓ uses session.defaultSession.webRequest.onHeadersReceived
-  ✓ callback modifies response headers
-  ✓ includes Content-Security-Policy header
-  ✓ restricts default-src to self
-  ✓ restricts script-src appropriately
-  ✓ restricts style-src appropriately
-  ✓ restricts img-src to safe sources
-  ✓ blocks object-src entirely
-  ✓ blocks frame-src entirely
-  ✓ restricts connect-src to self
-  ✓ restricts font-src to self
-  ✓ restricts base-uri to self
-  ✓ restricts form-action to self
-  ✓ calls configureCSP in app.whenReady
-  ✓ has security comment before CSP call
-  ✓ imports session from electron
-  ✓ session is used in configureCSP
-  ✓ spreads existing response headers
-  ✓ preserves existing headers when adding CSP
-
-\tests\unit\database-advanced-queries.test.js
-----------------------------------------
-  ✓ database.js exists
-  ✓ method exists in database.js
-  ✓ returns device with latest ping and active outage
-  ✓ returns null for non-existent device
-  ✓ calculates status based on ping and outage
-  ✓ spreads device properties with status info
-  ✓ method exists in database.js
-  ✓ returns array of devices with status
-  ✓ filters only active devices
-  ✓ uses LEFT JOIN to get latest ping per device
-  ✓ joins active outages
-  ✓ maps results with camelCase fields
-  ✓ determines status for each device
-  ✓ ipc-handlers.js exists
-  ✓ has device:getWithStatus handler
-  ✓ handler supports single device lookup
-  ✓ handler supports all devices lookup
-  ✓ transforms device fields to camelCase
-  ✓ preserves status objects in response
-  ✓ preload script exists
-  ✓ has device:getWithStatus in valid channels
-  ✓ exposes getDeviceWithStatus to renderer
-  ✓ uses prepared statement for batch query
-  ✓ method exists in database.js
-  ✓ returns null for non-existent device
-  ✓ calculates total pings in time window
-  ✓ calculates successful and failed ping counts
-  ✓ calculates average, min, max latency for successful pings
-  ✓ filters pings by time window
-  ✓ counts outages in time window
-  ✓ calculates total downtime including ongoing outages
-  ✓ calculates uptime percentage
-  ✓ returns comprehensive summary object
-  ✓ handles null values when no ping data exists
-  ✓ handler exists
-  ✓ validates deviceId parameter
-  ✓ returns error for non-existent device
-  ✓ passes hours parameter to database method
-  ✓ exposed to renderer
-  ✓ channel is whitelisted
+  ✓ creates instance with empty services map
+  ✓ isMonitoring returns false for unmonitored device
+  ✓ getDeviceStatus returns null for unmonitored device
+  ✓ stopMonitoring returns false when device not monitored
+  ✓ stopAll handles empty services map
+  ✓ getMonitoredCount returns correct count
+  ✓ getAllStatuses returns empty array initially
+  ✓ has callback hooks for status changes
+  ✓ can set callback hooks
+  ✓ exports singleton instance as default
 
 \tests\integration\ipc-handlers.integration.test.js
 ----------------------------------------

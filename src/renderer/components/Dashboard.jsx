@@ -55,12 +55,22 @@ function DeviceCardWrapper({ device, isMonitoring, isSelected, onSelect }) {
     }
   }, [device.id, isMonitoring, onSelect])
 
+  const handleKeyDown = useCallback((e) => {
+    if (isMonitoring && onSelect && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault()
+      onSelect(device.id)
+    }
+  }, [device.id, isMonitoring, onSelect])
+
   return (
     <div
       role="listitem"
       className={`device-card-wrapper ${isSelected ? 'selected' : ''} ${isMonitoring ? 'clickable' : ''}`}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
       aria-pressed={isSelected}
+      tabIndex={isMonitoring ? 0 : -1}
+      aria-describedby={isMonitoring ? 'card-hint-instructions' : undefined}
     >
       <DeviceStatusCard
         device={device}
@@ -113,6 +123,11 @@ function Dashboard() {
 
   return (
     <section className="dashboard" aria-label="Device Dashboard">
+      {/* Screen reader instructions for keyboard navigation */}
+      <div id="card-hint-instructions" className="sr-only">
+        Press Enter or Space to toggle the latency chart for this device.
+      </div>
+
       <header className="dashboard-header">
         <h2>Device Status Overview</h2>
         <div className="device-stats">
