@@ -19,6 +19,20 @@ class PingService {
     this.ipAddress = null
     this.intervalMs = 5000 // 5 second default interval
     
+    // Outage detection thresholds
+    this.outageThresholds = {
+      consecutiveFailures: 3, // Number of consecutive failures to trigger outage
+      maxLatencyMs: 1000,     // Maximum latency before warning
+      criticalLatencyMs: 5000  // Maximum latency before critical
+    }
+    
+    // Outage state tracking
+    this.outageState = {
+      consecutiveFailures: 0,
+      lastSuccessfulPing: null,
+      activeOutageSeverity: null
+    }
+    
     // Statistics tracking
     this.stats = {
       totalPings: 0,
@@ -140,9 +154,22 @@ class PingService {
         onResult(pingData)
       }
 
-      // Check for outage conditions
+      // Handle outage conditions with threshold-based detection
       if (!result.alive) {
+        this.outageState.consecutiveFailures++
         await this._handleOutage()
+      } else {
+        this.outageState.consecutiveFailures = 0
+        this.outageState.lastSuccessfulPing = new Date()
+        
+        // Check for high latency warnings
+        if (result.time > this.outageThresholds.criticalLatencyMs) {
+          await this._handleHighLatency('critical', result.time)
+        } else if (result.time > this.outageThresholds.maxLatencyMs) {
+          await this._handleHighLatency('warning', result.time)
+        }
+        
+        await this._resolveOutage()
       }
 
       return pingData
@@ -170,6 +197,8 @@ class PingService {
         onResult(pingData)
       }
 
+      // Track consecutive failures for threshold-based detection
+      this.outageState.consecutiveFailures++
       await this._handleOutage()
 
       return pingData
@@ -198,19 +227,30 @@ class PingService {
   }
 
   /**
-   * Handle outage detection and recording
+   * Handle outage detection and recording with threshold-based logic
    * @private
    */
   async _handleOutage() {
     const db = await getDatabase()
     
+    // Only start outage if threshold is reached
+    if (this.outageState.consecutiveFailures < this.outageThresholds.consecutiveFailures) {
+      console.log(`Device ${this.deviceId} (${this.ipAddress}): ${this.outageState.consecutiveFailures}/${this.outageThresholds.consecutiveFailures} failures (threshold not reached)`)
+      return
+    }
+    
     // Check if there's already an active outage
     const activeOutage = db.getActiveOutage(this.deviceId)
     
     if (!activeOutage) {
+      // Determine severity based on consecutive failures and time since last success
+      const severity = this._classifyOutageSeverity()
+      
       // Start new outage
-      db.startOutage(this.deviceId, 'critical')
-      console.warn(`Outage started for device ${this.deviceId} (${this.ipAddress})`)
+      db.startOutage(this.deviceId, severity)
+      this.outageState.activeOutageSeverity = severity
+      
+      console.warn(`Outage started for device ${this.deviceId} (${this.ipAddress}) - Severity: ${severity}, Consecutive failures: ${this.outageState.consecutiveFailures}`)
     }
   }
 
@@ -224,7 +264,9 @@ class PingService {
     
     if (activeOutage) {
       db.endOutage(activeOutage.id)
-      console.log(`Outage resolved for device ${this.deviceId} (${this.ipAddress})`)
+      this.outageState.activeOutageSeverity = null
+      const duration = Math.round((Date.now() - new Date(activeOutage.start_time).getTime()) / 1000)
+      console.log(`Outage resolved for device ${this.deviceId} (${this.ipAddress}) - Duration: ${duration}s`)
     }
   }
 
@@ -252,6 +294,71 @@ class PingService {
   }
 
   /**
+   * Classify outage severity based on consecutive failures and other factors
+   * @private
+   * @returns {string} Severity level: 'critical', 'warning', or 'info'
+   */
+  _classifyOutageSeverity() {
+    const { consecutiveFailures } = this.outageState
+    const { consecutiveFailures: threshold } = this.outageThresholds
+    
+    // Critical: many more failures than threshold
+    if (consecutiveFailures >= threshold * 3) {
+      return 'critical'
+    }
+    
+    // Warning: moderately above threshold
+    if (consecutiveFailures >= threshold * 2) {
+      return 'warning'
+    }
+    
+    // Info: just reached threshold
+    return 'info'
+  }
+
+  /**
+   * Handle high latency warnings without full outage
+   * @private
+   * @param {string} severity - 'warning' or 'critical'
+   * @param {number} latencyMs - Actual latency measured
+   */
+  async _handleHighLatency(severity, latencyMs) {
+    const db = await getDatabase()
+    
+    // Only log high latency if there's no active outage
+    const activeOutage = db.getActiveOutage(this.deviceId)
+    if (!activeOutage) {
+      // Create a short-duration outage for high latency tracking
+      const outageResult = db.startOutage(this.deviceId, severity)
+      
+      // Immediately end it to track as a performance issue
+      db.endOutage(outageResult.id)
+      
+      console.warn(`High latency detected for device ${this.deviceId} (${this.ipAddress}) - ${latencyMs}ms (${severity})`)
+    }
+  }
+
+  /**
+   * Configure outage detection thresholds
+   * @param {Object} thresholds - New threshold values
+   */
+  configureThresholds(thresholds) {
+    this.outageThresholds = { ...this.outageThresholds, ...thresholds }
+    console.log(`Outage thresholds updated for device ${this.deviceId}:`, this.outageThresholds)
+  }
+
+  /**
+   * Get current outage state
+   * @returns {Object} Current outage detection state
+   */
+  getOutageState() {
+    return {
+      ...this.outageState,
+      thresholds: this.outageThresholds
+    }
+  }
+
+  /**
    * Get service status
    * @returns {Object} Current status
    */
@@ -260,7 +367,8 @@ class PingService {
       isRunning: this.isRunning,
       deviceId: this.deviceId,
       ipAddress: this.ipAddress,
-      intervalMs: this.intervalMs
+      intervalMs: this.intervalMs,
+      outageState: this.getOutageState()
     }
   }
 }

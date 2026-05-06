@@ -300,6 +300,66 @@ export async function registerDatabaseHandlers() {
     }
   })
 
+  // ========== Outage Handlers ==========
+  
+  ipcMain.handle('outage:getActive', async (event, deviceId) => {
+    try {
+      if (deviceId) {
+        // Get active outage for specific device
+        const outage = db.getActiveOutage(deviceId)
+        return { success: true, data: outage }
+      } else {
+        // Get all active outages
+        const stmt = db.getStatement('getAllActiveOutages', 
+          `SELECT o.*, d.name, d.ip_address 
+           FROM outages o 
+           JOIN devices d ON o.device_id = d.id 
+           WHERE o.end_time IS NULL 
+           ORDER BY o.start_time DESC`
+        )
+        const outages = stmt.all()
+        return { success: true, data: outages }
+      }
+    } catch (error) {
+      console.error('Error getting active outages:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('outage:getHistory', async (event, deviceId, hours = 24) => {
+    try {
+      const stmt = db.getStatement('getOutageHistory',
+        `SELECT o.*, d.name, d.ip_address 
+         FROM outages o 
+         JOIN devices d ON o.device_id = d.id 
+         WHERE o.device_id = ? 
+           AND o.start_time > datetime('now', ?)
+         ORDER BY o.start_time DESC`
+      )
+      const outages = stmt.all(deviceId, `-${hours} hours`)
+      return { success: true, data: outages }
+    } catch (error) {
+      console.error('Error getting outage history:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('outage:configureThresholds', async (event, deviceId, thresholds) => {
+    try {
+      // Get the ping service for this device
+      const service = networkMonitor.services.get(deviceId)
+      if (!service) {
+        return { success: false, error: 'Device not currently monitored' }
+      }
+      
+      service.configureThresholds(thresholds)
+      return { success: true, data: { deviceId, thresholds } }
+    } catch (error) {
+      console.error('Error configuring outage thresholds:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
   // ========== Stats Handler ==========
   
   ipcMain.handle('db:stats', async () => {

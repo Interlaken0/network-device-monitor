@@ -24,9 +24,10 @@ describe('Database Edge Cases', () => {
   })
 
   describe('Duplicate IP Handling', () => {
-    it('enforces unique constraint on ip_address field', () => {
+    it('enforces unique constraint via partial index on active devices', () => {
       const content = fs.readFileSync(databasePath, 'utf-8')
-      expect(content).toContain('ip_address TEXT UNIQUE NOT NULL')
+      expect(content).toContain('CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_ip_active')
+      expect(content).toContain('ON devices(ip_address) WHERE is_active = 1')
     })
 
     it('has getDeviceByIp method for duplicate checking', () => {
@@ -141,7 +142,7 @@ describe('Database Edge Cases', () => {
 
     it('ip_address field has NOT NULL constraint', () => {
       const content = fs.readFileSync(databasePath, 'utf-8')
-      expect(content).toContain('ip_address TEXT UNIQUE NOT NULL')
+      expect(content).toContain('ip_address TEXT NOT NULL')
     })
 
     it('auto-increment handles device ID generation', () => {

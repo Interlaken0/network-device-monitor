@@ -8,7 +8,7 @@
 
 1. **Electron + Vite Foundation Established** - Desktop application shell running with hot-reload development environment, secure IPC bridge, and production build pipeline
 2. **SQLite Database Schema Implemented** - Three-table relational schema (devices, ping_logs, outages) with foreign key constraints, indexes for query optimisation, and prepared statement caching via singleton pattern
-3. **MVP Single-Device Monitoring Delivered** - Full CRUD operations for devices, real-time ICMP ping monitoring with 5-second intervals, colour-coded latency display (green/amber/red thresholds), and live ping result logging to database
+3. **MVP Single-Device Monitoring Delivered** - Full CRUD operations for devices, real-time ICMP ping monitoring with 5-second intervals, colour-coded latency display (green/yellow-amber/orange/red thresholds), and live ping result logging to database
 4. **Testing Infrastructure Configured** - Jest framework with 80%+ coverage target, unit tests for database operations, ping service validation, and in-memory database mocks for isolated testing
 
 ## Technical Decisions Made

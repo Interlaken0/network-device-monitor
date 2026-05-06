@@ -271,9 +271,10 @@ Feature: Device Status Dashboard
 **Status Thresholds:**
 | Status | Latency | Packet Loss | Colour | Icon |
 |--------|---------|-------------|--------|------|
-| Online | <50ms | 0% | Green | Checkmark |
-| Warning | 50-150ms | <10% | Amber | Triangle |
-| Offline | >150ms or unreachable | >10% | Red | Cross |
+| Excellent | <10ms | 0% | Green | Checkmark |
+| Good | 10-50ms | <5% | Yellow/Amber | Checkmark |
+| Fair | 50-150ms | <10% | Orange | Triangle |
+| Poor | >150ms or unreachable | >10% | Red | Cross |
 
 **Accessibility Requirements:**
 - ✅ Colour not sole indicator (icons + text)

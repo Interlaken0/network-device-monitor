@@ -49,20 +49,21 @@ Selected **React 18.x** with functional components and hooks for all UI developm
 React is used exclusively in the renderer process (`src/renderer/`):
 - `App.jsx` — Root component managing device list, forms, and monitoring state
 - Functional components with hooks — useState for local state, useEffect for IPC listeners
-- Props drilling acceptable for current scope — useState at App level passed to child components (Zustand planned for Sprint 3)
+- Zustand for global state — Device and theme stores eliminate prop drilling (ADR-004)
 - Real-time updates — IPC events trigger state updates, React handles efficient re-rendering
 
 Component hierarchy:
 ```
 App
-├── Device Form (create)
+├── Dashboard (device overview with latency charts)
+├── Add Device Form (create)
 ├── Device List
-│   ├── Device Card (view/edit/delete)
-│   │   ├── Status Badge (latency display)
-│   │   └── Monitoring Controls
-│   └── Edit Form (inline editing)
+│   └── Device Item (view/edit/delete inline)
+│       ├── Device Info (name, IP, type, location)
+│       ├── Device Status (latency badge)
+│       └── Device Actions (start/stop/edit/delete)
 ├── Delete Modal (confirmation)
-└── Live Ping Results (real-time log)
+└── Live Ping Results (real-time log section)
 ```
 
 ## References
@@ -76,5 +77,5 @@ App
 
 **Decision Date:** 2nd April 2026  
 **Decided By:** Development Team  
-**Last Updated:** 29th April 2026  
-**Verified:** React ^18.2.0 in package.json dependencies, ReactDOM.createRoot in main.jsx, @vitejs/plugin-react in electron.vite.config.js
+**Last Updated:** 6th May 2026  
+**Verified:** React ^18.2.0 in package.json; createRoot in main.jsx; @vitejs/plugin-react in electron.vite.config.js

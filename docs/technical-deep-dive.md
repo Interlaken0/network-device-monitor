@@ -951,9 +951,10 @@ So that I can quickly identify problems
 Given monitoring is active
 When I view the dashboard
 Then I see all devices with colour-coded status:
-  - Green: <50ms latency, 0% packet loss
-  - Amber: 50-150ms latency or <10% packet loss
-  - Red: >150ms latency, >10% packet loss, or unreachable
+  - Green: <10ms latency, 0% packet loss (Excellent)
+  - Yellow/Amber: 10-50ms latency, <5% packet loss (Good)
+  - Orange: 50-150ms latency or <10% packet loss (Fair)
+  - Red: >150ms latency, >10% packet loss, or unreachable (Poor)
 And current latency is displayed numerically
 And last successful ping time shown
 

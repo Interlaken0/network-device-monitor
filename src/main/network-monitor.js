@@ -152,10 +152,10 @@ class NetworkMonitor {
    * @param {number} deviceId - Device ID
    * @param {Object} pingData - Ping result data
    */
-  _handlePingResult(deviceId, pingData) {
+  async _handlePingResult(deviceId, pingData) {
     // Update aggregate status if callback set
     if (this.onAggregateStatus) {
-      const aggregate = this._calculateAggregateStatus()
+      const aggregate = await this._calculateAggregateStatus()
       this.onAggregateStatus(aggregate)
     }
 

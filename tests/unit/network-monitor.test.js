@@ -1,6 +1,5 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals'
 import { NetworkMonitor } from '@/main/network-monitor.js'
-import ping from 'ping'
 
 describe('NetworkMonitor', () => {
   let monitor
