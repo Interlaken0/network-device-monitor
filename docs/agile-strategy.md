@@ -254,7 +254,7 @@ removeListener: (channel, callback) => {
 
 **User Stories:**
 1. **Status Dashboard:** Live device status cards (5 pts)
-   - Colour-coded status (green/amber/red)
+   - Colour-coded status (green/yellow-amber/orange/red)
    - Current latency display
    - Packet loss indicator
    

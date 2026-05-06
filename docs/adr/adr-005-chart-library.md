@@ -51,7 +51,7 @@ Selected **Recharts 3.x** as the charting library for all latency visualisations
 
 LatencyChart component implements:
 - **Time-range filtering** — useMemo filters raw ping history by selected window (5min/1hr/24hr)
-- **Dynamic colour coding** — Line stroke colour changes based on average latency (green/yellow/orange/red)
+- **Dynamic colour coding** — Line stroke colour changes based on average latency (green/yellow-amber/orange/red)
 - **Custom tooltip** — Displays formatted timestamp and latency with colour-coded status
 - **Responsive container** — Charts resize automatically with parent container
 - **Performance optimisation** — isAnimationActive={false} prevents animation overhead during frequent data updates
