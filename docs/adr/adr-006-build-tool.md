@@ -86,5 +86,5 @@ Native module handling:
 
 **Decision Date:** 2nd April 2026  
 **Decided By:** Development Team  
-**Last Updated:** 29th April 2026  
+**Last Updated:** 6th May 2026  
 **Verified:** Vite ^5.0.0 and electron-vite ^2.0.0 in package.json; electron.vite.config.js configures all three processes
