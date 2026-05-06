@@ -74,8 +74,8 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const latency = payload[0].value
     let statusClass = 'latency-excellent'
-    if (latency >= 10) statusClass = 'latency-good'
-    if (latency >= 50) statusClass = 'latency-fair'
+    if (latency >= 10 && latency < 50) statusClass = 'latency-good'
+    if (latency >= 50 && latency < 150) statusClass = 'latency-fair'
     if (latency >= 150) statusClass = 'latency-poor'
 
     return (

@@ -188,8 +188,8 @@ function App() {
                       <>
                         <div className="device-info">
                           <h3>{device.name}</h3>
-                          <p className="ip-address">{device.ip_address || device.ipAddress}</p>
-                          <p className="device-type">{device.device_type || device.deviceType}</p>
+                          <p className="ip-address">{device.ipAddress}</p>
+                          <p className="device-type">{device.deviceType}</p>
                           {device.location && <p className="device-location">{device.location}</p>}
                         </div>
 
@@ -280,7 +280,7 @@ function App() {
                   <div key={deviceId} className={`ping-entry ${result.success ? 'success' : 'failure'}`}>
                     <div className="ping-info">
                       <span className="device-name" title={device?.name}>{device?.name || 'Unknown'}</span>
-                      <span className="ip-address">{device?.ip_address || device?.ipAddress || 'Unknown IP'}</span>
+                      <span className="ip-address">{device?.ipAddress || 'Unknown IP'}</span>
                     </div>
                     <div className="ping-details">
                       <span className="timestamp">{timeString}</span>

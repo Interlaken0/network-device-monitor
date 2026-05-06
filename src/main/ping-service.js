@@ -140,9 +140,11 @@ class PingService {
         onResult(pingData)
       }
 
-      // Check for outage conditions
+      // Handle outage conditions
       if (!result.alive) {
         await this._handleOutage()
+      } else {
+        await this._resolveOutage()
       }
 
       return pingData

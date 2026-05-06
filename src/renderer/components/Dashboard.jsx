@@ -4,6 +4,7 @@ import { shallow } from 'zustand/shallow'
 import DeviceStatusCard from './DeviceStatusCard'
 import LatencyChart from './LatencyChart'
 import { useDeviceStore, selectDevices, selectIsMonitoring } from '../stores/deviceStore'
+import { calculateStatusFromLatency } from '../utils/status'
 
 /**
  * Dashboard displays a grid of device status cards.
@@ -11,23 +12,6 @@ import { useDeviceStore, selectDevices, selectIsMonitoring } from '../stores/dev
  *
  * @component
  */
-
-/**
- * Calculates status category based on latency thresholds.
- * Excellent < 10ms, Good 10-50ms, Fair 50-150ms, Poor > 150ms.
- *
- * @param {number|null} latencyMs - Latency in milliseconds
- * @param {boolean} isOnline - Whether device is responding
- * @returns {string} Status category: 'excellent', 'good', 'fair', 'poor', 'unknown'
- */
-const calculateStatusFromLatency = (latencyMs, isOnline) => {
-  if (!isOnline) return 'offline'
-  if (!latencyMs) return 'unknown'
-  if (latencyMs < 10) return 'excellent'
-  if (latencyMs < 50) return 'good'
-  if (latencyMs < 150) return 'fair'
-  return 'poor'
-}
 
 /**
  * Dashboard component displaying device status cards in a grid.

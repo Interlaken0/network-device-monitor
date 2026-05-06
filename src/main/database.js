@@ -687,17 +687,19 @@ export const createTestDatabase = async () => {
   const db = new DatabaseClass(':memory:')
   db.pragma('foreign_keys = ON')
   
-  // Create tables
+  // Create tables (matching production schema)
   db.exec(`
     CREATE TABLE devices (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      ip_address TEXT UNIQUE NOT NULL,
+      ip_address TEXT NOT NULL,
       device_type TEXT CHECK(device_type IN ('server', 'router', 'printer', 'switch')),
       location TEXT,
       is_active BOOLEAN DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE UNIQUE INDEX idx_devices_ip_active ON devices(ip_address) WHERE is_active = 1;
     
     CREATE TABLE ping_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

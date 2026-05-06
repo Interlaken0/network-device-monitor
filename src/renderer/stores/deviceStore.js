@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import { calculateStatusFromLatency } from '../utils/status'
 
 /**
  * Device state store using Zustand for Sprint 3 dashboard visualisation.
@@ -7,20 +8,6 @@ import { devtools } from 'zustand/middleware'
  *
  * @module deviceStore
  */
-
-/**
- * Calculates status colour based on latency threshold.
- *
- * @param {number} latencyMs - Latency in milliseconds
- * @returns {string} Status colour class: 'excellent', 'good', 'fair', or 'poor'
- */
-const calculateStatusFromLatency = (latencyMs) => {
-  if (!latencyMs) return 'unknown'
-  if (latencyMs < 10) return 'excellent'
-  if (latencyMs < 50) return 'good'
-  if (latencyMs < 150) return 'fair'
-  return 'poor'
-}
 
 /**
  * Zustand store for device management and monitoring state.
@@ -154,8 +141,8 @@ export const useDeviceStore = create(
             editForm: device
               ? {
                   name: device.name || '',
-                  ipAddress: device.ip_address || device.ipAddress || '',
-                  deviceType: device.device_type || device.deviceType || 'server',
+                  ipAddress: device.ipAddress || '',
+                  deviceType: device.deviceType || 'server',
                   location: device.location || ''
                 }
               : { name: '', ipAddress: '', deviceType: 'server', location: '' }
@@ -298,7 +285,7 @@ export const useDeviceStore = create(
         try {
           const result = await window.electronAPI?.startPing?.(
             device.id,
-            device.ip_address || device.ipAddress,
+            device.ipAddress,
             5000
           )
 

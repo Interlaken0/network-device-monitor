@@ -1,6 +1,6 @@
 /**
- * Update preload script to include database IPC channels
- * Add these to the existing VALID_CHANNELS and exposed APIs
+ * Preload script exposing secure IPC bridge to renderer process.
+ * Whitelists valid channels and wraps IPC calls for type safety.
  */
 
 import { contextBridge, ipcRenderer } from 'electron'

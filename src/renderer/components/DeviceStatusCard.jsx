@@ -97,11 +97,21 @@ const formatDeviceType = (deviceType) => {
 }
 
 /**
+ * Gets device IP address from device object.
+ *
+ * @param {Object} device - Device object
+ * @returns {string} IP address or 'Unknown'
+ */
+const getDeviceIp = (device) => {
+  return device.ipAddress || 'Unknown'
+}
+
+/**
  * DeviceStatusCard component.
  */
 function DeviceStatusCard({ device, latency, status, isOnline, isMonitoring }) {
   const statusConfig = getStatusConfig(status, isOnline, isMonitoring)
-  const deviceType = formatDeviceType(device.device_type || device.deviceType)
+  const deviceType = formatDeviceType(device.deviceType)
 
   // Generate status description for screen readers
   const statusDescription = isMonitoring
@@ -141,8 +151,8 @@ function DeviceStatusCard({ device, latency, status, isOnline, isMonitoring }) {
       </header>
 
       <div className="card-body">
-        <div className="ip-address" aria-label={`IP Address: ${device.ip_address || device.ipAddress}`}>
-          {device.ip_address || device.ipAddress}
+        <div className="ip-address" aria-label={`IP Address: ${getDeviceIp(device)}`}>
+          {getDeviceIp(device)}
         </div>
 
         {device.location && (
@@ -174,9 +184,7 @@ DeviceStatusCard.propTypes = {
   device: PropTypes.shape({
     id: PropTypes.number.isRequired,
     name: PropTypes.string.isRequired,
-    ip_address: PropTypes.string,
     ipAddress: PropTypes.string,
-    device_type: PropTypes.string,
     deviceType: PropTypes.string,
     location: PropTypes.string
   }).isRequired,
