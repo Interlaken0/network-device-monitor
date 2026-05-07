@@ -210,7 +210,7 @@ function Dashboard() {
               View historical outage data for all monitored devices
             </p>
           </div>
-          <OutageTimeline />
+          <OutageTimeline showTitle={false} />
         </section>
       )}
     </section>

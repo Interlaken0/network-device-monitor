@@ -35,6 +35,39 @@ const SEVERITY_COLOURS = {
 }
 
 /**
+ * Formats duration in seconds to hh:mm:ss format.
+ *
+ * @param {number} seconds - Duration in seconds
+ * @returns {string} Formatted duration string
+ */
+const formatDuration = (seconds) => {
+  if (!seconds || seconds <= 0) return 'Ongoing'
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  if (hours > 0) {
+    return `${hours}h ${minutes.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`
+  }
+  return `${minutes}m ${secs.toString().padStart(2, '0')}s`
+}
+
+/**
+ * Formats duration for compact display (stats, tooltips).
+ *
+ * @param {number} seconds - Duration in seconds
+ * @returns {string} Compact formatted duration
+ */
+const formatDurationCompact = (seconds) => {
+  if (!seconds || seconds <= 0) return 'Ongoing'
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  }
+  return `${minutes}m`
+}
+
+/**
  * Gets theme-aware chart colours for grid and axes.
  *
  * @param {string} theme - Current theme ('light' or 'dark')
@@ -77,7 +110,9 @@ const formatTimelineTime = (timestamp, timeRange) => {
   } else if (timeRange === '7days') {
     return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' })
   } else {
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    // For 24hr view, show date and time since outages could span multiple days
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' +
+           date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   }
 }
 
@@ -93,9 +128,7 @@ const formatTimelineTime = (timestamp, timeRange) => {
 const OutageTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
-    const duration = data.durationSeconds
-      ? `${Math.floor(duration / 60)}m ${duration % 60}s`
-      : 'Ongoing'
+    const duration = formatDurationCompact(data.durationSeconds)
 
     return (
       <div className="outage-tooltip">
@@ -127,8 +160,9 @@ OutageTooltip.propTypes = {
  * @param {Object} props
  * @param {number} props.deviceId - Device identifier (optional, shows all devices if null)
  * @param {string} props.deviceName - Device name for display
+ * @param {boolean} props.showTitle - Whether to show the component title (default: true)
  */
-function OutageTimeline({ deviceId = null, deviceName = null }) {
+function OutageTimeline({ deviceId = null, deviceName = null, showTitle = true }) {
   const [timeRange, setTimeRange] = useState('24hr')
   const [severityFilter, setSeverityFilter] = useState('all')
 
@@ -172,6 +206,13 @@ function OutageTimeline({ deviceId = null, deviceName = null }) {
       endTime: outage.endTime,
       durationSeconds: outage.durationSeconds || Math.floor((Date.now() - new Date(outage.startTime).getTime()) / 1000),
       time: formatTimelineTime(outage.startTime, timeRange),
+      displayDate: new Date(outage.startTime).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
       timestamp: new Date(outage.startTime).getTime()
     })).sort((a, b) => a.timestamp - b.timestamp)
   }, [outageHistory, deviceId, timeRange, severityFilter])
@@ -203,9 +244,11 @@ function OutageTimeline({ deviceId = null, deviceName = null }) {
       aria-label={`Outage timeline${deviceName ? ` for ${deviceName}` : ''}`}
     >
       <header className="timeline-header">
-        <h3 className="timeline-title">
-          Outage History{deviceName ? `: ${deviceName}` : ''}
-        </h3>
+        {showTitle && (
+          <h3 className="timeline-title">
+            Outage History{deviceName ? `: ${deviceName}` : ''}
+          </h3>
+        )}
         
         {/* Controls */}
         <div className="timeline-controls">
@@ -258,7 +301,7 @@ function OutageTimeline({ deviceId = null, deviceName = null }) {
             <span className="stat-label">Outages</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{stats.avgDuration}s</span>
+            <span className="stat-value">{formatDurationCompact(stats.avgDuration)}</span>
             <span className="stat-label">Avg Duration</span>
           </div>
           {Object.entries(stats.bySeverity).map(([severity, count]) => (
@@ -338,7 +381,7 @@ function OutageTimeline({ deviceId = null, deviceName = null }) {
                 key={outage.id} 
                 className={`outage-item outage-${outage.severity}`}
                 role="article"
-                aria-label={`Outage: ${outage.severity}, ${outage.time}`}
+                aria-label={`Outage: ${outage.severity}, ${outage.displayDate}`}
               >
                 <div className="outage-item-header">
                   <span 
@@ -347,9 +390,9 @@ function OutageTimeline({ deviceId = null, deviceName = null }) {
                   >
                     {outage.severity.toUpperCase()}
                   </span>
-                  <span className="outage-time">{outage.time}</span>
+                  <span className="outage-time">{outage.displayDate}</span>
                   <span className="outage-duration">
-                    {outage.durationSeconds ? `${Math.floor(outage.durationSeconds / 60)}m ${outage.durationSeconds % 60}s` : 'Ongoing'}
+                    {formatDuration(outage.durationSeconds)}
                   </span>
                 </div>
                 {!deviceId && (
@@ -368,7 +411,8 @@ function OutageTimeline({ deviceId = null, deviceName = null }) {
 
 OutageTimeline.propTypes = {
   deviceId: PropTypes.number,
-  deviceName: PropTypes.string
+  deviceName: PropTypes.string,
+  showTitle: PropTypes.bool
 }
 
 export default OutageTimeline

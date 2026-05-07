@@ -674,7 +674,23 @@ class DatabaseManager {
     )
     return stmt.all(deviceId, `-${hours} hours`)
   }
-  
+
+  /**
+   * Get outage history for all devices
+   * @param {number} hours - Hours of history to retrieve
+   * @returns {Array} List of outages with device details
+   */
+  getAllOutageHistory(hours = 24) {
+    const stmt = this.getStatement('getAllOutageHistory',
+      `SELECT o.*, d.name, d.ip_address
+       FROM outages o
+       JOIN devices d ON o.device_id = d.id
+       WHERE o.start_time > datetime('now', ?)
+       ORDER BY o.start_time DESC`
+    )
+    return stmt.all(`-${hours} hours`)
+  }
+
   // ========== Utility Methods ==========
   
   /**

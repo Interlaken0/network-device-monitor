@@ -30,6 +30,26 @@ function transformDevices(devices) {
   return devices.map(transformDevice)
 }
 
+// Transform outage data from snake_case to camelCase
+function transformOutage(outage) {
+  if (!outage) return null
+  return {
+    id: outage.id,
+    deviceId: outage.device_id,
+    deviceName: outage.name,
+    ipAddress: outage.ip_address,
+    startTime: outage.start_time,
+    endTime: outage.end_time,
+    durationSeconds: outage.duration_seconds,
+    severity: outage.severity
+  }
+}
+
+function transformOutages(outages) {
+  if (!outages) return []
+  return outages.map(transformOutage)
+}
+
 // Validation helpers
 const validators = {
   ipAddress: (value) => {
@@ -307,18 +327,18 @@ export async function registerDatabaseHandlers() {
       if (deviceId) {
         // Get active outage for specific device
         const outage = db.getActiveOutage(deviceId)
-        return { success: true, data: outage }
+        return { success: true, data: transformOutage(outage) }
       } else {
         // Get all active outages
-        const stmt = db.getStatement('getAllActiveOutages', 
-          `SELECT o.*, d.name, d.ip_address 
-           FROM outages o 
-           JOIN devices d ON o.device_id = d.id 
-           WHERE o.end_time IS NULL 
+        const stmt = db.getStatement('getAllActiveOutages',
+          `SELECT o.*, d.name, d.ip_address
+           FROM outages o
+           JOIN devices d ON o.device_id = d.id
+           WHERE o.end_time IS NULL
            ORDER BY o.start_time DESC`
         )
         const outages = stmt.all()
-        return { success: true, data: outages }
+        return { success: true, data: transformOutages(outages) }
       }
     } catch (error) {
       console.error('Error getting active outages:', error)
@@ -328,16 +348,30 @@ export async function registerDatabaseHandlers() {
 
   ipcMain.handle('outage:getHistory', async (event, deviceId, hours = 24) => {
     try {
-      const stmt = db.getStatement('getOutageHistory',
-        `SELECT o.*, d.name, d.ip_address 
-         FROM outages o 
-         JOIN devices d ON o.device_id = d.id 
-         WHERE o.device_id = ? 
-           AND o.start_time > datetime('now', ?)
-         ORDER BY o.start_time DESC`
-      )
-      const outages = stmt.all(deviceId, `-${hours} hours`)
-      return { success: true, data: outages }
+      let outages
+      if (deviceId) {
+        // Get outage history for specific device
+        const stmt = db.getStatement('getOutageHistory',
+          `SELECT o.*, d.name, d.ip_address
+           FROM outages o
+           JOIN devices d ON o.device_id = d.id
+           WHERE o.device_id = ?
+             AND o.start_time > datetime('now', ?)
+           ORDER BY o.start_time DESC`
+        )
+        outages = stmt.all(deviceId, `-${hours} hours`)
+      } else {
+        // Get outage history for all devices
+        const stmt = db.getStatement('getAllOutageHistory',
+          `SELECT o.*, d.name, d.ip_address
+           FROM outages o
+           JOIN devices d ON o.device_id = d.id
+           WHERE o.start_time > datetime('now', ?)
+           ORDER BY o.start_time DESC`
+        )
+        outages = stmt.all(`-${hours} hours`)
+      }
+      return { success: true, data: transformOutages(outages) }
     } catch (error) {
       console.error('Error getting outage history:', error)
       return { success: false, error: error.message }
