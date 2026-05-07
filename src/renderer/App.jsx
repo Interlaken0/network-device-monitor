@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import './App.css'
 import Dashboard from './components/Dashboard'
+import ToastNotifications from './components/ToastNotifications'
 import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
 import { useThemeStore, selectTheme, selectToggleTheme } from './stores/themeStore'
 
@@ -298,6 +299,9 @@ function App() {
           </section>
         )}
       </main>
+      
+      {/* Toast Notifications */}
+      <ToastNotifications />
     </div>
   )
 }

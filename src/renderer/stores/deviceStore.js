@@ -26,6 +26,10 @@ export const useDeviceStore = create(
       isMonitoring: {},
       pingHistory: {},
 
+      // Outage tracking state
+      outageHistory: [],
+      activeOutages: {},
+
       // Form states
       newDeviceForm: { name: '', ipAddress: '' },
       editingDevice: null,
@@ -115,11 +119,58 @@ export const useDeviceStore = create(
             isMonitoring: { ...state.isMonitoring, [deviceId]: false },
             pingResults: Object.fromEntries(
               Object.entries(state.pingResults).filter(([id]) => parseInt(id) !== deviceId)
+            ),
+            activeOutages: Object.fromEntries(
+              Object.entries(state.activeOutages).filter(([id]) => parseInt(id) !== deviceId)
             )
           }),
           false,
           'stopMonitoringDevice'
         ),
+
+      /**
+       * Actions: Outage management
+       */
+      setActiveOutage: (deviceId, outage) =>
+        set(
+          (state) => ({
+            activeOutages: { ...state.activeOutages, [deviceId]: outage }
+          }),
+          false,
+          'setActiveOutage'
+        ),
+
+      clearActiveOutage: (deviceId) =>
+        set(
+          (state) => ({
+            activeOutages: Object.fromEntries(
+              Object.entries(state.activeOutages).filter(([id]) => parseInt(id) !== deviceId)
+            )
+          }),
+          false,
+          'clearActiveOutage'
+        ),
+
+      addOutageToHistory: (outage) =>
+        set(
+          (state) => ({
+            outageHistory: [...state.outageHistory, outage].slice(-500) // Keep last 500 outages
+          }),
+          false,
+          'addOutageToHistory'
+        ),
+
+      loadOutageHistory: async () => {
+        try {
+          // Get outage history for all devices (last 30 days)
+          const result = await window.electronAPI?.getOutageHistory(null, 720) // 720 hours = 30 days
+          if (result?.success) {
+            set({ outageHistory: result.data || [] }, false, 'loadOutageHistory')
+          }
+        } catch (err) {
+          console.error('Failed to load outage history:', err)
+        }
+      },
 
       /**
        * Actions: Form management
@@ -412,3 +463,17 @@ export const selectMonitoringStats = (state) => {
     averageLatency: latencyCount > 0 ? Math.round(totalLatency / latencyCount) : null
   }
 }
+
+/** @returns {Array} List of all outage history */
+export const selectOutageHistory = (state) => state.outageHistory
+
+/** @returns {Object} Map of deviceId to active outage */
+export const selectActiveOutages = (state) => state.activeOutages
+
+/**
+ * Gets active outage for a specific device.
+ *
+ * @param {number} deviceId - Device identifier
+ * @returns {Object|null} Active outage or null
+ */
+export const selectActiveOutage = (deviceId) => (state) => state.activeOutages[deviceId] || null

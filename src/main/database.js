@@ -636,10 +636,43 @@ class DatabaseManager {
       'getActiveOutage',
       `SELECT * FROM outages 
        WHERE device_id = ? AND end_time IS NULL 
-       ORDER BY start_time DESC 
-       LIMIT 1`
+       ORDER BY start_time DESC
+      `
     )
     return stmt.get(deviceId)
+  }
+
+  /**
+   * Get all active outages with device information
+   * @returns {Array} List of active outages with device details
+   */
+  getAllActiveOutages() {
+    const stmt = this.getStatement('getAllActiveOutages', 
+      `SELECT o.*, d.name, d.ip_address 
+       FROM outages o 
+       JOIN devices d ON o.device_id = d.id 
+       WHERE o.end_time IS NULL 
+       ORDER BY o.start_time DESC`
+    )
+    return stmt.all()
+  }
+
+  /**
+   * Get outage history for a specific device
+   * @param {number} deviceId - Device ID
+   * @param {number} hours - Hours of history to retrieve
+   * @returns {Array} List of outages with device details
+   */
+  getOutageHistory(deviceId, hours = 24) {
+    const stmt = this.getStatement('getOutageHistory',
+      `SELECT o.*, d.name, d.ip_address 
+       FROM outages o 
+       JOIN devices d ON o.device_id = d.id 
+       WHERE o.device_id = ? 
+         AND o.start_time > datetime('now', ?)
+       ORDER BY o.start_time DESC`
+    )
+    return stmt.all(deviceId, `-${hours} hours`)
   }
   
   // ========== Utility Methods ==========

@@ -24,6 +24,10 @@ const VALID_CHANNELS = [
   'ping:record',
   'ping:getRecent',
   'ping:getStats',
+  // Outage operations
+  'outage:getActive',
+  'outage:getHistory',
+  'outage:configureThresholds',
   // Database
   'db:stats'
 ]
@@ -50,6 +54,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Database stats
   getDatabaseStats: () => ipcRenderer.invoke('db:stats'),
+  
+  // Outage operations
+  getActiveOutage: (deviceId) => ipcRenderer.invoke('outage:getActive', deviceId),
+  getOutageHistory: (deviceId, hours) => ipcRenderer.invoke('outage:getHistory', deviceId, hours),
+  configureOutageThresholds: (deviceId, thresholds) => ipcRenderer.invoke('outage:configureThresholds', deviceId, thresholds),
   
   // Event listeners with cleanup
   onPingResult: (callback) => {
