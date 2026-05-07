@@ -12,6 +12,7 @@ import {
   Cell
 } from 'recharts'
 import { useDeviceStore } from '../stores/deviceStore'
+import { useThemeStore } from '../stores/themeStore'
 
 /**
  * Time range options for outage timeline filtering.
@@ -29,8 +30,37 @@ const TIME_RANGES = {
  */
 const SEVERITY_COLOURS = {
   critical: '#dc3545',
-  warning: '#ffc107', 
+  warning: '#ffc107',
   info: '#17a2b8'
+}
+
+/**
+ * Gets theme-aware chart colours for grid and axes.
+ *
+ * @param {string} theme - Current theme ('light' or 'dark')
+ * @returns {Object} Chart colour configuration
+ */
+const getChartColours = (theme) => {
+  if (theme === 'dark') {
+    return {
+      grid: '#3a3a5c',
+      axis: '#8b8ba7',
+      tooltip: {
+        background: '#252545',
+        border: '#4a4a6a',
+        text: '#eaeaea'
+      }
+    }
+  }
+  return {
+    grid: '#e9ecef',
+    axis: '#6c757d',
+    tooltip: {
+      background: '#ffffff',
+      border: '#e0e0e0',
+      text: '#2c3e50'
+    }
+  }
 }
 
 /**
@@ -102,7 +132,10 @@ function OutageTimeline({ deviceId = null, deviceName = null }) {
   const [timeRange, setTimeRange] = useState('24hr')
   const [severityFilter, setSeverityFilter] = useState('all')
 
-  
+  // Get current theme for chart colours
+  const theme = useThemeStore((state) => state.theme)
+  const chartColours = getChartColours(theme)
+
   // Subscribe to outage data from device store
   const outageHistory = useDeviceStore(
     (state) => state.outageHistory || [],
@@ -250,24 +283,24 @@ function OutageTimeline({ deviceId = null, deviceName = null }) {
               data={timelineData}
               margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e9ecef" />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartColours.grid} />
               <XAxis
                 dataKey="time"
-                stroke="#6c757d"
+                stroke={chartColours.axis}
                 fontSize={12}
                 tickLine={false}
                 interval="preserveStartEnd"
                 minTickGap={30}
               />
               <YAxis
-                stroke="#6c757d"
+                stroke={chartColours.axis}
                 fontSize={12}
                 tickLine={false}
-                label={{ 
-                  value: 'Duration (seconds)', 
-                  angle: -90, 
-                  position: 'insideLeft', 
-                  fill: '#6c757d' 
+                label={{
+                  value: 'Duration (seconds)',
+                  angle: -90,
+                  position: 'insideLeft',
+                  fill: chartColours.axis
                 }}
               />
               <Tooltip content={<OutageTooltip />} />

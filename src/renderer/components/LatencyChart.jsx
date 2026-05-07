@@ -70,6 +70,35 @@ const getLineColour = (data, theme) => {
  * @param {string} props.label - X-axis label
  * @returns {JSX.Element|null} Tooltip content
  */
+/**
+ * Gets theme-aware chart colours based on current theme.
+ *
+ * @param {string} theme - Current theme ('light' or 'dark')
+ * @returns {Object} Chart colour configuration
+ */
+const getChartColours = (theme) => {
+  if (theme === 'dark') {
+    return {
+      grid: '#3a3a5c',
+      axis: '#8b8ba7',
+      tooltip: {
+        background: '#252545',
+        border: '#4a4a6a',
+        text: '#eaeaea'
+      }
+    }
+  }
+  return {
+    grid: '#e9ecef',
+    axis: '#6c757d',
+    tooltip: {
+      background: '#ffffff',
+      border: '#e0e0e0',
+      text: '#2c3e50'
+    }
+  }
+}
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const latency = payload[0].value
@@ -159,20 +188,20 @@ function LatencyChart({ deviceId, deviceName }) {
               data={chartData}
               margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e9ecef" />
+              <CartesianGrid strokeDasharray="3 3" stroke={getChartColours(theme).grid} />
               <XAxis
                 dataKey="time"
-                stroke="#6c757d"
+                stroke={getChartColours(theme).axis}
                 fontSize={12}
                 tickLine={false}
                 interval="preserveStartEnd"
                 minTickGap={30}
               />
               <YAxis
-                stroke="#6c757d"
+                stroke={getChartColours(theme).axis}
                 fontSize={12}
                 tickLine={false}
-                label={{ value: 'Latency (ms)', angle: -90, position: 'insideLeft', fill: '#6c757d' }}
+                label={{ value: 'Latency (ms)', angle: -90, position: 'insideLeft', fill: getChartColours(theme).axis }}
               />
               <Tooltip content={<CustomTooltip />} />
               <Line
