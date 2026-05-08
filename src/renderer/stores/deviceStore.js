@@ -421,7 +421,7 @@ export const selectDeviceStatus = (deviceId) => (state) => {
     return { status: 'not-monitoring', latencyMs: null, isOnline: false }
   }
 
-  const status = calculateStatusFromLatency(pingResult.latencyMs)
+  const status = calculateStatusFromLatency(pingResult.latencyMs, pingResult.success)
   return {
     status,
     latencyMs: pingResult.latencyMs,
