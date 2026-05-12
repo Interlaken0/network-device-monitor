@@ -2,11 +2,11 @@
 
 A desktop application for real-time network infrastructure monitoring, built with Electron, React, and SQLite.
 
-**Sprint 1 Status:** ✅ MVP Complete - Single/Multi-device monitoring with database persistence
+**Sprint 1 Status:** MVP Complete - Single/Multi-device monitoring with database persistence
 
 ---
 
-## 🚀 Clone & Run
+## Clone & Run
 
 ```bash
 # Clone the repository
@@ -49,7 +49,7 @@ npm run dev
    npm install
    ```
 
-   > ⚠️ **Note:** On Windows, `better-sqlite3` may need to be rebuilt:
+   > **Note:** On Windows, `better-sqlite3` may need to be rebuilt:
    > ```bash
    > npx electron-rebuild
    > ```
@@ -230,14 +230,14 @@ The preload script should output to `out/preload/index.cjs` (not `.mjs`).
 
 ## Key Features (Sprint 1 MVP)
 
-- ✅ **Electron desktop app** with React UI
-- ✅ **SQLite database** for device and ping data persistence
-- ✅ **ICMP ping monitoring** with configurable intervals
-- ✅ **Device CRUD** - Add, list, delete network devices
-- ✅ **Real-time latency display** with color-coded status
-- ✅ **Cross-platform** (Windows, macOS, Linux support via Electron)
-- ✅ **Secure IPC** with context isolation and sandbox
-- ✅ **Unit testing** with Jest
+- **Electron desktop app** with React UI
+- **SQLite database** for device and ping data persistence
+- **ICMP ping monitoring** with configurable intervals
+- **Device CRUD** - Add, list, delete network devices
+- **Real-time latency display** with color-coded status
+- **Cross-platform** (Windows, macOS, Linux support via Electron)
+- **Secure IPC** with context isolation and sandbox
+- **Unit testing** with Jest
 
 ---
 

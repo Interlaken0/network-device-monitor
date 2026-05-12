@@ -705,21 +705,281 @@ class DatabaseManager {
       console.log('Database connection closed')
     }
   }
-  
+
   /**
    * Get database statistics
    * @returns {Object} Table row counts
    */
   getStats() {
-    const devices = this.db.prepare('SELECT COUNT(*) as count FROM devices').get()
-    const pingLogs = this.db.prepare('SELECT COUNT(*) as count FROM ping_logs').get()
-    const outages = this.db.prepare('SELECT COUNT(*) as count FROM outages').get()
-    
+    const deviceCount = this.db.prepare('SELECT COUNT(*) as count FROM devices').get().count
+    const pingCount = this.db.prepare('SELECT COUNT(*) as count FROM ping_logs').get().count
+    const outageCount = this.db.prepare('SELECT COUNT(*) as count FROM outages WHERE end_time IS NULL').get().count
+
     return {
-      devices: devices.count,
-      pingLogs: pingLogs.count,
-      outages: outages.count
+      deviceCount,
+      pingCount,
+      outageCount
     }
+  }
+
+  /**
+   * Apply ping history retention policy
+   * @param {number} retentionDays - Number of days to retain records (default: 30)
+   * @returns {Object} Purge statistics
+   */
+  applyPingHistoryRetention(retentionDays = 30) {
+    try {
+      // Delete ping logs older than retention period
+      const deleteStmt = this.db.prepare(`
+        DELETE FROM ping_logs 
+        WHERE timestamp < datetime('now', '-${retentionDays} days')
+      `)
+      
+      const result = deleteStmt.run()
+      
+      // Vacuum database to reclaim space
+      this.db.exec('VACUUM')
+      
+      console.log(`Purged ${result.changes} ping records older than ${retentionDays} days`)
+      
+      return {
+        deletedRecords: result.changes,
+        retentionDays,
+        timestamp: new Date().toISOString()
+      }
+      
+    } catch (error) {
+      console.error('Error applying ping history retention:', error)
+      throw new Error('Failed to apply retention policy')
+    }
+  }
+
+  /**
+   * Get retention policy statistics
+   * @param {number} retentionDays - Number of days to retain records
+   * @returns {Object} Statistics about records that would be purged
+   */
+  getRetentionPolicyStats(retentionDays = 30) {
+    try {
+      // Count records older than retention period
+      const countStmt = this.db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM ping_logs 
+        WHERE timestamp < datetime('now', '-${retentionDays} days')
+      `)
+      
+      const result = countStmt.get()
+      
+      // Get oldest record timestamp (included in size query below)
+      
+      // Get total database size estimate
+      const sizeStmt = this.db.prepare(`
+        SELECT 
+          COUNT(*) as total_records,
+          MIN(timestamp) as oldest_record,
+          MAX(timestamp) as newest_record
+        FROM ping_logs
+      `)
+      
+      const size = sizeStmt.get()
+      
+      return {
+        recordsToPurge: result.count,
+        totalRecords: size.total_records,
+        oldestRecord: size.oldest_record,
+        newestRecord: size.newest_record,
+        retentionDays,
+        purgePercentage: size.total_records > 0 
+          ? Math.round((result.count / size.total_records) * 100) 
+          : 0
+      }
+      
+    } catch (error) {
+      console.error('Error getting retention policy stats:', error)
+      throw new Error('Failed to get retention statistics')
+    }
+  }
+
+  /**
+   * Get ping logs for export with optional filtering
+   * @param {number} deviceId - Optional device ID filter
+   * @param {string} startDate - Optional start date filter
+   * @param {string} endDate - Optional end date filter
+   * @returns {Array} Ping log records
+   */
+  getPingLogsForExport(deviceId = null, startDate = null, endDate = null) {
+    let query = `
+      SELECT pl.id, d.name as device_name, d.ip_address, d.device_type,
+             pl.latency_ms, pl.success, pl.packet_loss, pl.timestamp
+      FROM ping_logs pl
+      JOIN devices d ON pl.device_id = d.id
+      WHERE 1=1
+    `
+
+    const params = []
+
+    if (deviceId) {
+      query += ' AND pl.device_id = ?'
+      params.push(deviceId)
+    }
+
+    if (startDate) {
+      query += ' AND pl.timestamp >= ?'
+      params.push(startDate)
+    }
+
+    if (endDate) {
+      query += ' AND pl.timestamp <= ?'
+      params.push(endDate)
+    }
+
+    query += ' ORDER BY pl.timestamp DESC LIMIT 10000'
+
+    const stmt = this.db.prepare(query)
+    return stmt.all(...params)
+  }
+
+  /**
+   * Get outages for export with optional filtering
+   * @param {number} deviceId - Optional device ID filter
+   * @param {string} startDate - Optional start date filter
+   * @param {string} endDate - Optional end date filter
+   * @returns {Array} Outage records
+   */
+  getOutagesForExport(deviceId = null, startDate = null, endDate = null) {
+    let query = `
+      SELECT o.id, d.name as device_name, d.ip_address, d.device_type,
+             o.start_time, o.end_time, o.duration_seconds, o.severity
+      FROM outages o
+      JOIN devices d ON o.device_id = d.id
+      WHERE 1=1
+    `
+
+    const params = []
+
+    if (deviceId) {
+      query += ' AND o.device_id = ?'
+      params.push(deviceId)
+    }
+
+    if (startDate) {
+      query += ' AND o.start_time >= ?'
+      params.push(startDate)
+    }
+
+    if (endDate) {
+      query += ' AND o.start_time <= ?'
+      params.push(endDate)
+    }
+
+    query += ' ORDER BY o.start_time DESC'
+
+    const stmt = this.db.prepare(query)
+    return stmt.all(...params)
+  }
+
+  /**
+   * Export ping logs to CSV
+   * @param {Array} pingLogs - Ping log records
+   * @param {string} filename - Output filename
+   */
+  exportPingLogsToCSV(pingLogs, filename) {
+    const csvContent = pingLogs.map(log => Object.values(log).join(',')).join('\n')
+    const fs = require('fs')
+    fs.writeFileSync(filename, csvContent)
+  }
+
+  /**
+   * Export outages to CSV
+   * @param {Array} outages - Outage records
+   * @param {string} filename - Output filename
+   */
+  exportOutagesToCSV(outages, filename) {
+    const csvContent = outages.map(outage => Object.values(outage).join(',')).join('\n')
+    const fs = require('fs')
+    fs.writeFileSync(filename, csvContent)
+  }
+
+  /**
+   * Export ping logs to HTML
+   * @param {Array} pingLogs - Ping log records
+   * @param {string} filename - Output filename
+   */
+  exportPingLogsToHTML(pingLogs, filename) {
+    const htmlContent = `
+      <html>
+        <body>
+          <h1>Ping Logs</h1>
+          <table>
+            <tr>
+              <th>ID</th>
+              <th>Device Name</th>
+              <th>IP Address</th>
+              <th>Device Type</th>
+              <th>Latency (ms)</th>
+              <th>Success</th>
+              <th>Packet Loss</th>
+              <th>Timestamp</th>
+            </tr>
+            ${pingLogs.map(log => `
+              <tr>
+                <td>${log.id}</td>
+                <td>${log.device_name}</td>
+                <td>${log.ip_address}</td>
+                <td>${log.device_type}</td>
+                <td>${log.latency_ms}</td>
+                <td>${log.success}</td>
+                <td>${log.packet_loss}</td>
+                <td>${log.timestamp}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </body>
+      </html>
+    `
+    const fs = require('fs')
+    fs.writeFileSync(filename, htmlContent)
+  }
+
+  /**
+   * Export outages to HTML
+   * @param {Array} outages - Outage records
+   * @param {string} filename - Output filename
+   */
+  exportOutagesToHTML(outages, filename) {
+    const htmlContent = `
+      <html>
+        <body>
+          <h1>Outages</h1>
+          <table>
+            <tr>
+              <th>ID</th>
+              <th>Device Name</th>
+              <th>IP Address</th>
+              <th>Device Type</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Duration (seconds)</th>
+              <th>Severity</th>
+            </tr>
+            ${outages.map(outage => `
+              <tr>
+                <td>${outage.id}</td>
+                <td>${outage.device_name}</td>
+                <td>${outage.ip_address}</td>
+                <td>${outage.device_type}</td>
+                <td>${outage.start_time}</td>
+                <td>${outage.end_time}</td>
+                <td>${outage.duration_seconds}</td>
+                <td>${outage.severity}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </body>
+      </html>
+    `
+    const fs = require('fs')
+    fs.writeFileSync(filename, htmlContent)
   }
 }
 

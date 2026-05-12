@@ -129,7 +129,7 @@ function App() {
             />
             <input
               type="text"
-              placeholder="IP Address (e.g., 192.168.1.1)"
+              placeholder="Network Address (IP or hostname, e.g., 192.168.1.1 or router.local)"
               value={newDeviceForm.ipAddress}
               onChange={(e) => setNewDeviceForm({ ipAddress: e.target.value })}
             />
@@ -161,7 +161,7 @@ function App() {
                         />
                         <input
                           type="text"
-                          placeholder="IP Address"
+                          placeholder="Network Address (IP or hostname)"
                           value={editForm.ipAddress}
                           onChange={(e) => setEditForm({ ipAddress: e.target.value })}
                         />

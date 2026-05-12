@@ -251,7 +251,7 @@ export const useDeviceStore = create(
         const { newDeviceForm, resetNewDeviceForm, loadDevices, setError } = get()
 
         if (!newDeviceForm.name || !newDeviceForm.ipAddress) {
-          setError('Please enter both name and IP address')
+          setError('Please enter both name and network address')
           return false
         }
 
@@ -281,7 +281,7 @@ export const useDeviceStore = create(
         const { editForm, resetEditForm, loadDevices, setError } = get()
 
         if (!editForm.name || !editForm.ipAddress) {
-          setError('Please enter both name and IP address')
+          setError('Please enter both name and network address')
           return false
         }
 

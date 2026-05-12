@@ -101,10 +101,10 @@ const formatDeviceType = (deviceType) => {
 }
 
 /**
- * Gets device IP address from device object.
+ * Gets device network address from device object.
  *
  * @param {Object} device - Device object
- * @returns {string} IP address or 'Unknown'
+ * @returns {string} Network address or 'Unknown'
  */
 const getDeviceIp = (device) => {
   return device.ipAddress || 'Unknown'
@@ -211,7 +211,7 @@ function DeviceStatusCard({ device, latency, status, isOnline, isMonitoring, act
       </header>
 
       <div className="card-body">
-        <div className="ip-address" aria-label={`IP Address: ${getDeviceIp(device)}`}>
+        <div className="ip-address" aria-label={`Network Address: ${getDeviceIp(device)}`}>
           {getDeviceIp(device)}
         </div>
 
