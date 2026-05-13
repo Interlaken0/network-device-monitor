@@ -21,12 +21,14 @@ export const calculateStatusFromLatency = (latencyMs, isOnline = true) => {
 }
 
 /**
- * Gets CSS colour class for a given status.
+ * Gets CSS colour class for latency display, combining status calculation and class mapping.
  *
- * @param {string} status - Status category
+ * @param {number|null} latencyMs - Latency in milliseconds
+ * @param {boolean} isOnline - Whether device is responding (defaults to true)
  * @returns {string} CSS class name for colour coding
  */
-export const getStatusColourClass = (status) => {
+export const getLatencyColourClass = (latencyMs, isOnline = true) => {
+  const status = calculateStatusFromLatency(latencyMs, isOnline)
   const colourMap = {
     excellent: 'latency-excellent',
     good: 'latency-good',

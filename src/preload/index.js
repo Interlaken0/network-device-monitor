@@ -29,7 +29,14 @@ const VALID_CHANNELS = [
   'outage:getHistory',
   'outage:configureThresholds',
   // Database
-  'db:stats'
+  'db:stats',
+  // Export
+  'export:csv',
+  'export:html',
+  'export:saveFile',
+  // Retention
+  'retention:getStats',
+  'retention:applyPolicy'
 ]
 
 // --------- Expose API to Renderer Process ---------
@@ -54,7 +61,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Database stats
   getDatabaseStats: () => ipcRenderer.invoke('db:stats'),
-  
+
+  // Export operations
+  exportCSV: (query, columns) => ipcRenderer.invoke('export:csv', query, columns),
+  exportHTML: (query, template) => ipcRenderer.invoke('export:html', query, template),
+  saveExportFile: (content, filename, filters) => ipcRenderer.invoke('export:saveFile', content, filename, filters),
+
+  // Retention operations
+  getRetentionStats: (retentionDays) => ipcRenderer.invoke('retention:getStats', retentionDays),
+  applyRetentionPolicy: (retentionDays) => ipcRenderer.invoke('retention:applyPolicy', retentionDays),
+
   // Outage operations
   getActiveOutage: (deviceId) => ipcRenderer.invoke('outage:getActive', deviceId),
   getOutageHistory: (deviceId, hours) => ipcRenderer.invoke('outage:getHistory', deviceId, hours),

@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useThemeStore } from '../stores/themeStore'
+import { getChartColours } from '../utils/chart-theme'
 
 /**
  * Time range options for outage timeline filtering.
@@ -65,35 +66,6 @@ const formatDurationCompact = (seconds) => {
     return `${hours}h ${minutes}m`
   }
   return `${minutes}m`
-}
-
-/**
- * Gets theme-aware chart colours for grid and axes.
- *
- * @param {string} theme - Current theme ('light' or 'dark')
- * @returns {Object} Chart colour configuration
- */
-const getChartColours = (theme) => {
-  if (theme === 'dark') {
-    return {
-      grid: '#3a3a5c',
-      axis: '#8b8ba7',
-      tooltip: {
-        background: '#252545',
-        border: '#4a4a6a',
-        text: '#eaeaea'
-      }
-    }
-  }
-  return {
-    grid: '#e9ecef',
-    axis: '#6c757d',
-    tooltip: {
-      background: '#ffffff',
-      border: '#e0e0e0',
-      text: '#2c3e50'
-    }
-  }
 }
 
 /**

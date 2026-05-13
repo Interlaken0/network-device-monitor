@@ -430,7 +430,7 @@ export async function registerDatabaseHandlers() {
   ipcMain.handle('outage:configureThresholds', async (event, deviceId, thresholds) => {
     try {
       // Get the ping service for this device
-      const service = networkMonitor.services.get(deviceId)
+      const service = networkMonitor.getService(deviceId)
       if (!service) {
         return { success: false, error: 'Device not currently monitored' }
       }

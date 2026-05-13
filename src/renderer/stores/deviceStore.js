@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { calculateStatusFromLatency } from '../utils/status'
 
 /**
  * Device state store using Zustand for Sprint 3 dashboard visualisation.
@@ -380,9 +379,6 @@ export const useDeviceStore = create(
 /** @returns {Array} List of all devices */
 export const selectDevices = (state) => state.devices
 
-/** @returns {boolean} Loading state */
-export const selectIsLoading = (state) => state.isLoading
-
 /** @returns {string|null} Current error message */
 export const selectError = (state) => state.error
 
@@ -391,9 +387,6 @@ export const selectPingResults = (state) => state.pingResults
 
 /** @returns {Object} Map of deviceId to monitoring status */
 export const selectIsMonitoring = (state) => state.isMonitoring
-
-/** @returns {Object} Map of deviceId to ping history array */
-export const selectPingHistory = (state) => state.pingHistory
 
 /** @returns {Object} New device form state */
 export const selectNewDeviceForm = (state) => state.newDeviceForm
@@ -406,66 +399,6 @@ export const selectEditForm = (state) => state.editForm
 
 /** @returns {Object} Delete modal state */
 export const selectDeleteModal = (state) => state.deleteModal
-
-/**
- * Gets device status summary with latency and colour classification.
- *
- * @param {number} deviceId - Device identifier
- * @returns {Object} Status summary with latency, status colour, and online state
- */
-export const selectDeviceStatus = (deviceId) => (state) => {
-  const pingResult = state.pingResults[deviceId]
-  const isMonitoring = state.isMonitoring[deviceId]
-
-  if (!isMonitoring || !pingResult) {
-    return { status: 'not-monitoring', latencyMs: null, isOnline: false }
-  }
-
-  const status = calculateStatusFromLatency(pingResult.latencyMs, pingResult.success)
-  return {
-    status,
-    latencyMs: pingResult.latencyMs,
-    isOnline: pingResult.success,
-    timestamp: pingResult.timestamp
-  }
-}
-
-/**
- * Gets aggregated statistics for all monitored devices.
- *
- * @returns {Object} Statistics: total, online, offline, averageLatency
- */
-export const selectMonitoringStats = (state) => {
-  const monitoringDeviceIds = Object.entries(state.isMonitoring)
-    .filter(([, isActive]) => isActive)
-    .map(([id]) => parseInt(id))
-
-  const total = monitoringDeviceIds.length
-  let online = 0
-  let totalLatency = 0
-  let latencyCount = 0
-
-  monitoringDeviceIds.forEach((id) => {
-    const result = state.pingResults[id]
-    if (result?.success) {
-      online++
-      if (result.latencyMs) {
-        totalLatency += result.latencyMs
-        latencyCount++
-      }
-    }
-  })
-
-  return {
-    total,
-    online,
-    offline: total - online,
-    averageLatency: latencyCount > 0 ? Math.round(totalLatency / latencyCount) : null
-  }
-}
-
-/** @returns {Array} List of all outage history */
-export const selectOutageHistory = (state) => state.outageHistory
 
 /** @returns {Object} Map of deviceId to active outage */
 export const selectActiveOutages = (state) => state.activeOutages
