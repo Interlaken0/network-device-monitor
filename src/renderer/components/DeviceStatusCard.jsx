@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 
 /**
  * DeviceStatusCard displays a single device's current status.
- * Shows device info, latency, and colour-coded status indicator.
+ * Shows device info, latency, colour-coded status indicator, and outage information.
  *
  * @component
  * @param {Object} props
@@ -12,6 +12,10 @@ import PropTypes from 'prop-types'
  * @param {string} props.status - Status category: 'excellent', 'good', 'fair', 'poor', 'unknown', 'offline'
  * @param {boolean} props.isOnline - Whether device is responding to pings
  * @param {boolean} props.isMonitoring - Whether monitoring is active
+ * @param {Object|null} props.activeOutage - Current active outage information
+ * @param {number} props.activeOutage.id - Outage ID
+ * @param {string} props.activeOutage.severity - Outage severity: 'critical', 'warning', 'info'
+ * @param {string} props.activeOutage.startTime - Outage start timestamp
  */
 
 /**
@@ -97,25 +101,81 @@ const formatDeviceType = (deviceType) => {
 }
 
 /**
- * Gets device IP address from device object.
+ * Gets device network address from device object.
  *
  * @param {Object} device - Device object
- * @returns {string} IP address or 'Unknown'
+ * @returns {string} Network address or 'Unknown'
  */
 const getDeviceIp = (device) => {
   return device.ipAddress || 'Unknown'
 }
 
 /**
+ * Calculates outage duration from start time to now.
+ *
+ * @param {string} startTime - ISO timestamp of outage start
+ * @returns {string} Formatted duration string
+ */
+const getOutageDuration = (startTime) => {
+  if (!startTime) return 'Unknown'
+  
+  const start = new Date(startTime)
+  const now = new Date()
+  const durationMs = now - start
+  
+  const seconds = Math.floor(durationMs / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes % 60}m`
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds % 60}s`
+  } else {
+    return `${seconds}s`
+  }
+}
+
+/**
+ * Gets outage severity configuration.
+ *
+ * @param {string} severity - Outage severity level
+ * @returns {Object} Severity configuration
+ */
+const getOutageConfig = (severity) => {
+  const configs = {
+    critical: {
+      class: 'outage-critical',
+      label: 'Critical',
+      colour: '#dc3545'
+    },
+    warning: {
+      class: 'outage-warning', 
+      label: 'Warning',
+      colour: '#ffc107'
+    },
+    info: {
+      class: 'outage-info',
+      label: 'Info',
+      colour: '#17a2b8'
+    }
+  }
+  
+  return configs[severity] || configs.info
+}
+
+/**
  * DeviceStatusCard component.
  */
-function DeviceStatusCard({ device, latency, status, isOnline, isMonitoring }) {
+function DeviceStatusCard({ device, latency, status, isOnline, isMonitoring, activeOutage }) {
   const statusConfig = getStatusConfig(status, isOnline, isMonitoring)
   const deviceType = formatDeviceType(device.deviceType)
+  const outageConfig = activeOutage ? getOutageConfig(activeOutage.severity) : null
+  const outageDuration = activeOutage ? getOutageDuration(activeOutage.startTime) : null
 
   // Generate status description for screen readers
   const statusDescription = isMonitoring
-    ? `${device.name}: ${statusConfig.label}${latency ? `, latency ${latency} milliseconds` : ''}`
+    ? `${device.name}: ${statusConfig.label}${latency ? `, latency ${latency} milliseconds` : ''}${activeOutage ? `, active outage: ${outageConfig.label} for ${outageDuration}` : ''}`
     : `${device.name}: Not monitoring`
 
   return (
@@ -151,7 +211,7 @@ function DeviceStatusCard({ device, latency, status, isOnline, isMonitoring }) {
       </header>
 
       <div className="card-body">
-        <div className="ip-address" aria-label={`IP Address: ${getDeviceIp(device)}`}>
+        <div className="ip-address" aria-label={`Network Address: ${getDeviceIp(device)}`}>
           {getDeviceIp(device)}
         </div>
 
@@ -175,6 +235,33 @@ function DeviceStatusCard({ device, latency, status, isOnline, isMonitoring }) {
             <span className="status-label" aria-hidden="true">{statusConfig.label}</span>
           )}
         </div>
+
+        {/* Outage Indicator */}
+        {activeOutage && (
+          <div 
+            className={`outage-indicator ${outageConfig.class}`}
+            role="alert"
+            aria-live="polite"
+            aria-label={`Active outage: ${outageConfig.label}, duration: ${outageDuration}`}
+          >
+            <div className="outage-header">
+              <span className="outage-badge" style={{ backgroundColor: outageConfig.colour }}>
+                {outageConfig.label}
+              </span>
+              <span className="outage-duration">
+                {outageDuration}
+              </span>
+            </div>
+            <div className="outage-details">
+              <span className="outage-start">
+                Started: {new Date(activeOutage.startTime).toLocaleTimeString('en-GB', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </article>
   )
@@ -191,7 +278,12 @@ DeviceStatusCard.propTypes = {
   latency: PropTypes.number,
   status: PropTypes.oneOf(['excellent', 'good', 'fair', 'poor', 'unknown', 'offline']).isRequired,
   isOnline: PropTypes.bool.isRequired,
-  isMonitoring: PropTypes.bool.isRequired
+  isMonitoring: PropTypes.bool.isRequired,
+  activeOutage: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    severity: PropTypes.oneOf(['critical', 'warning', 'info']).isRequired,
+    startTime: PropTypes.string.isRequired
+  })
 }
 
 export default DeviceStatusCard

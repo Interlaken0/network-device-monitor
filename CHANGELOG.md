@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.1](https://github.com/Interlaken0/network-device-monitor/compare/v0.2.0...v0.2.1) (2026-05-13)
+
+
+### Features
+
+* implement outage detection UI integration ([0766f00](https://github.com/Interlaken0/network-device-monitor/commit/0766f00a07bb644329f5804944ae66f93ea66c72))
+* implement theme system polish and visual enhancements ([0039538](https://github.com/Interlaken0/network-device-monitor/commit/00395385e649c27f30e8d31e3bc869acbe0ad5f5))
+
+
+### Bug Fixes
+
+* **changelog:** correct heading levels for all version entries ([11177ad](https://github.com/Interlaken0/network-device-monitor/commit/11177ad4a0f110e669b2a158b574e4755df40b94))
+* **changelog:** correct version hierarchy and remove duplicate entries ([4496acd](https://github.com/Interlaken0/network-device-monitor/commit/4496acddc88001b7f7878e8da36866e08ddd3ea8))
+* **store:** pass isOnline to calculateStatusFromLatency and add tsconfig for build pipeline ([b6ddabb](https://github.com/Interlaken0/network-device-monitor/commit/b6ddabb403ed73b04132f8b6a47e8f13d7fc26d0))
+
 ## [0.2.0](https://github.com/Interlaken0/network-device-monitor/compare/v0.1.3...v0.2.0) (2026-04-29)
 
 ### Features

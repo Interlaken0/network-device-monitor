@@ -19,6 +19,10 @@
   --accent-danger: #dc3545;
   --shadow-color: rgba(0, 0, 0, 0.1);
   --modal-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Theme transition timing */
+  --theme-transition-duration: 0.3s;
+  --theme-transition-easing: ease;
 }
 
 [data-theme="dark"] {
@@ -42,11 +46,423 @@
   --modal-overlay: rgba(0, 0, 0, 0.7);
 }
 
-/* Apply theme colours */
+/* Apply theme colours with smooth transitions */
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background var(--theme-transition-duration) var(--theme-transition-easing),
+              color var(--theme-transition-duration) var(--theme-transition-easing);
+}
+
+/* Theme transition rules for all themed elements */
+* {
+  transition-property: background-color, color, border-color, box-shadow;
+  transition-duration: var(--theme-transition-duration);
+  transition-timing-function: var(--theme-transition-easing);
+}
+
+/* Disable transitions for performance-critical elements */
+.device-status,
+.ping-result,
+.chart-container canvas,
+.chart-container svg {
+  transition: none;
+}
+
+/* Smooth transitions for interactive elements */
+button,
+input,
+.card,
+.modal-content {
+  transition: background-color var(--theme-transition-duration) var(--theme-transition-easing),
+              color var(--theme-transition-duration) var(--theme-transition-easing),
+              border-color var(--theme-transition-duration) var(--theme-transition-easing),
+              box-shadow var(--theme-transition-duration) var(--theme-transition-easing),
+              transform 0.2s ease;
+}
+
+/* Button hover states */
+button {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Card hover effects */
+.card {
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px var(--shadow-color);
+  transform: translateY(-2px);
+}
+
+/* Input focus states */
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus {
+  box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.2);
+}
+
+/* Link hover effects */
+a {
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-primary);
+}
+
+/* Status badge animations */
+.status-badge {
+  transition: all 0.3s ease;
+}
+
+.status-badge:hover {
+  transform: scale(1.05);
+}
+
+/* Outage indicator pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.outage-indicator.critical {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Toast notification slide animation */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.toast-enter {
+  animation: slideIn 0.3s ease-out;
+}
+
+.toast-exit {
+  animation: slideOut 0.3s ease-in;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--bg-tertiary);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Fade in animation for content */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Theme toggle button specific styles */
+.theme-toggle {
+  background: transparent;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-primary);
+  transform: rotate(15deg);
+}
+
+/* Device card specific hover */
+.device-card {
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+.device-card:hover {
+  border-left-color: var(--accent-primary);
+  background: var(--bg-hover);
+}
+
+.device-card.selected {
+  border-left-color: var(--accent-primary);
+  background: var(--bg-hover);
+  box-shadow: 0 0 0 2px var(--accent-primary);
+}
+
+/* ========== Outage Timeline Styles ========== */
+
+.outage-timeline-container {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-card);
+  margin-top: 1.5rem;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.timeline-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.timeline-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.time-range-btn,
+.severity-filter-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.time-range-btn:hover,
+.severity-filter-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-primary);
+}
+
+.time-range-btn.active,
+.severity-filter-btn.active {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+/* Timeline Statistics */
+.timeline-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.timeline-stats .stat-item {
+  background: var(--bg-tertiary);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+}
+
+.timeline-stats .stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.timeline-stats .stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* Timeline Chart */
+.timeline-body {
+  margin-bottom: 1.5rem;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+/* Outage List */
+.outage-list {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.list-title {
+  margin: 0 0 1rem 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.outage-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.outage-item {
+  background: var(--bg-card);
+  border-radius: 6px;
+  padding: 0.75rem;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.outage-item:hover {
+  background: var(--bg-hover);
+}
+
+.outage-item.critical {
+  border-left-color: var(--accent-danger);
+}
+
+.outage-item.warning {
+  border-left-color: var(--accent-warning);
+}
+
+.outage-item.info {
+  border-left-color: #17a2b8;
+}
+
+.outage-item-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.outage-severity-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: white;
+}
+
+.outage-time {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.outage-duration {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.outage-device {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+/* Chart Tooltip */
+.outage-tooltip {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.75rem;
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.outage-tooltip .tooltip-time {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.outage-tooltip .tooltip-severity {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.outage-tooltip .tooltip-duration {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.outage-tooltip .tooltip-device {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .app {

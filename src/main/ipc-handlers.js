@@ -10,6 +10,8 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from './database.js'
 import networkMonitor from './network-monitor.js'
+import exportService from './export-service.js'
+import dns from 'dns'
 
 // Transform database snake_case fields to camelCase for frontend
 function transformDevice(device) {
@@ -30,12 +32,79 @@ function transformDevices(devices) {
   return devices.map(transformDevice)
 }
 
+// Transform outage data from snake_case to camelCase
+function transformOutage(outage) {
+  if (!outage) return null
+  return {
+    id: outage.id,
+    deviceId: outage.device_id,
+    deviceName: outage.name,
+    ipAddress: outage.ip_address,
+    startTime: outage.start_time,
+    endTime: outage.end_time,
+    durationSeconds: outage.duration_seconds,
+    severity: outage.severity
+  }
+}
+
+function transformOutages(outages) {
+  if (!outages) return []
+  return outages.map(transformOutage)
+}
+
 // Validation helpers
 const validators = {
   ipAddress: (value) => {
     const ipv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
     const ipv6 = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/
     return ipv4.test(value) || ipv6.test(value)
+  },
+
+  hostname: (value) => {
+    // RFC compliant hostname validation
+    // - Total length: 1-253 characters
+    // - Each label: 1-63 characters
+    // - Labels: letters, digits, hyphen (cannot start or end with hyphen)
+    // - Entire hostname: letters, digits, hyphen, dots
+    if (!value || value.length > 253 || value.length < 1) return false
+    
+    const labels = value.split('.')
+    if (labels.length === 0) return false
+    
+    const labelRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/
+    
+    for (const label of labels) {
+      if (!labelRegex.test(label)) return false
+    }
+    
+    return true
+  },
+
+  networkAddress: async (value) => {
+    // Accept either IP address or hostname
+    if (validators.ipAddress(value)) {
+      return true
+    }
+    
+    if (validators.hostname(value)) {
+      // For hostnames, verify they are resolvable
+      try {
+        await new Promise((resolve, reject) => {
+          dns.lookup(value, (err, address) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(address)
+            }
+          })
+        })
+        return true
+      } catch (error) {
+        return false
+      }
+    }
+    
+    return false
   },
   
   deviceName: (value) => {
@@ -120,18 +189,18 @@ export async function registerDatabaseHandlers() {
         throw new Error('Invalid device name')
       }
       
-      if (!validators.ipAddress(data.ipAddress)) {
-        throw new Error('Invalid IP address')
+      if (!(await validators.networkAddress(data.ipAddress))) {
+        throw new Error('Invalid network address')
       }
       
       if (!validators.deviceType(data.deviceType)) {
         throw new Error('Invalid device type')
       }
       
-      // Check for duplicate IP
+      // Check for duplicate network address
       const existing = db.getDeviceByIp(data.ipAddress)
       if (existing) {
-        throw new Error('IP address already exists')
+        throw new Error('Network address already exists')
       }
       
       const result = db.createDevice(data)
@@ -207,16 +276,16 @@ export async function registerDatabaseHandlers() {
         }
       }
       
-      // Validate IP if provided
-      if (dbUpdates.ip_address && !validators.ipAddress(dbUpdates.ip_address)) {
-        throw new Error('Invalid IP address format')
+      // Validate network address if provided
+      if (dbUpdates.ip_address && !(await validators.networkAddress(dbUpdates.ip_address))) {
+        throw new Error('Invalid network address format')
       }
       
-      // Check for duplicate IP if changed
+      // Check for duplicate network address if changed
       if (dbUpdates.ip_address) {
         const existing = db.getDeviceByIp(dbUpdates.ip_address)
         if (existing && existing.id !== id) {
-          throw new Error('IP address already exists')
+          throw new Error('Network address already exists')
         }
       }
       
@@ -307,18 +376,18 @@ export async function registerDatabaseHandlers() {
       if (deviceId) {
         // Get active outage for specific device
         const outage = db.getActiveOutage(deviceId)
-        return { success: true, data: outage }
+        return { success: true, data: transformOutage(outage) }
       } else {
         // Get all active outages
-        const stmt = db.getStatement('getAllActiveOutages', 
-          `SELECT o.*, d.name, d.ip_address 
-           FROM outages o 
-           JOIN devices d ON o.device_id = d.id 
-           WHERE o.end_time IS NULL 
+        const stmt = db.getStatement('getAllActiveOutages',
+          `SELECT o.*, d.name, d.ip_address
+           FROM outages o
+           JOIN devices d ON o.device_id = d.id
+           WHERE o.end_time IS NULL
            ORDER BY o.start_time DESC`
         )
         const outages = stmt.all()
-        return { success: true, data: outages }
+        return { success: true, data: transformOutages(outages) }
       }
     } catch (error) {
       console.error('Error getting active outages:', error)
@@ -328,16 +397,30 @@ export async function registerDatabaseHandlers() {
 
   ipcMain.handle('outage:getHistory', async (event, deviceId, hours = 24) => {
     try {
-      const stmt = db.getStatement('getOutageHistory',
-        `SELECT o.*, d.name, d.ip_address 
-         FROM outages o 
-         JOIN devices d ON o.device_id = d.id 
-         WHERE o.device_id = ? 
-           AND o.start_time > datetime('now', ?)
-         ORDER BY o.start_time DESC`
-      )
-      const outages = stmt.all(deviceId, `-${hours} hours`)
-      return { success: true, data: outages }
+      let outages
+      if (deviceId) {
+        // Get outage history for specific device
+        const stmt = db.getStatement('getOutageHistory',
+          `SELECT o.*, d.name, d.ip_address
+           FROM outages o
+           JOIN devices d ON o.device_id = d.id
+           WHERE o.device_id = ?
+             AND o.start_time > datetime('now', ?)
+           ORDER BY o.start_time DESC`
+        )
+        outages = stmt.all(deviceId, `-${hours} hours`)
+      } else {
+        // Get outage history for all devices
+        const stmt = db.getStatement('getAllOutageHistory',
+          `SELECT o.*, d.name, d.ip_address
+           FROM outages o
+           JOIN devices d ON o.device_id = d.id
+           WHERE o.start_time > datetime('now', ?)
+           ORDER BY o.start_time DESC`
+        )
+        outages = stmt.all(`-${hours} hours`)
+      }
+      return { success: true, data: transformOutages(outages) }
     } catch (error) {
       console.error('Error getting outage history:', error)
       return { success: false, error: error.message }
@@ -368,6 +451,100 @@ export async function registerDatabaseHandlers() {
       return { success: true, data: stats }
     } catch (error) {
       console.error('Error getting stats:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  // ========== Export Handlers ==========
+  
+  ipcMain.handle('export:csv', async (event, query, columns) => {
+    try {
+      // Validate query parameters
+      if (!query.type) {
+        throw new Error('Export type is required')
+      }
+      
+      const csvContent = await exportService.generateCSV(query, columns || [])
+      return { success: true, data: csvContent }
+    } catch (error) {
+      console.error('Error generating CSV export:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('export:html', async (event, query, template) => {
+    try {
+      // Validate query parameters
+      if (!query.type) {
+        throw new Error('Export type is required')
+      }
+      
+      const htmlContent = await exportService.generateHTMLReport(query, template || {})
+      return { success: true, data: htmlContent }
+    } catch (error) {
+      console.error('Error generating HTML export:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('export:saveFile', async (event, content, filename, filters) => {
+    try {
+      // Validate input
+      if (!content || !filename) {
+        throw new Error('Content and filename are required')
+      }
+      
+      const result = await exportService.saveFile(content, filename, filters)
+      return { success: true, data: result }
+    } catch (error) {
+      console.error('Error saving export file:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  // ========== Retention Policy Handlers ==========
+  
+  ipcMain.handle('retention:getStats', async (event, retentionDays = 30) => {
+    try {
+      // Validate retention days
+      if (retentionDays < 1 || retentionDays > 365) {
+        throw new Error('Retention days must be between 1 and 365')
+      }
+      
+      const stats = db.getRetentionPolicyStats(retentionDays)
+      return { success: true, data: stats }
+    } catch (error) {
+      console.error('Error getting retention stats:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('retention:applyPolicy', async (event, retentionDays = 30) => {
+    try {
+      // Validate retention days
+      if (retentionDays < 1 || retentionDays > 365) {
+        throw new Error('Retention days must be between 1 and 365')
+      }
+      
+      // Get stats before purge for reporting
+      const beforeStats = db.getRetentionPolicyStats(retentionDays)
+      
+      // Apply retention policy
+      const result = db.applyPingHistoryRetention(retentionDays)
+      
+      // Get updated database stats
+      const afterStats = db.getStats()
+      
+      return { 
+        success: true, 
+        data: {
+          ...result,
+          beforeStats,
+          afterStats
+        }
+      }
+    } catch (error) {
+      console.error('Error applying retention policy:', error)
       return { success: false, error: error.message }
     }
   })

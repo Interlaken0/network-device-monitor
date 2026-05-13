@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import './App.css'
 import Dashboard from './components/Dashboard'
+import ToastNotifications from './components/ToastNotifications'
 import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
 import { useThemeStore, selectTheme, selectToggleTheme } from './stores/themeStore'
 
@@ -128,7 +129,7 @@ function App() {
             />
             <input
               type="text"
-              placeholder="IP Address (e.g., 192.168.1.1)"
+              placeholder="Network Address (IP or hostname, e.g., 192.168.1.1 or router.local)"
               value={newDeviceForm.ipAddress}
               onChange={(e) => setNewDeviceForm({ ipAddress: e.target.value })}
             />
@@ -160,7 +161,7 @@ function App() {
                         />
                         <input
                           type="text"
-                          placeholder="IP Address"
+                          placeholder="Network Address (IP or hostname)"
                           value={editForm.ipAddress}
                           onChange={(e) => setEditForm({ ipAddress: e.target.value })}
                         />
@@ -298,6 +299,9 @@ function App() {
           </section>
         )}
       </main>
+      
+      {/* Toast Notifications */}
+      <ToastNotifications />
     </div>
   )
 }

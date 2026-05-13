@@ -1,9 +1,15 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { shallow } from 'zustand/shallow'
 import DeviceStatusCard from './DeviceStatusCard'
 import LatencyChart from './LatencyChart'
-import { useDeviceStore, selectDevices, selectIsMonitoring } from '../stores/deviceStore'
+import OutageTimeline from './OutageTimeline'
+import { 
+  useDeviceStore, 
+  selectDevices, 
+  selectIsMonitoring, 
+  selectActiveOutage
+} from '../stores/deviceStore'
 import { calculateStatusFromLatency } from '../utils/status'
 
 /**
@@ -25,6 +31,12 @@ function DeviceCardWrapper({ device, isMonitoring, isSelected, onSelect }) {
   // This prevents re-renders when other devices' ping results update
   const pingResult = useDeviceStore(
     (state) => state.pingResults[device.id],
+    shallow
+  )
+
+  // Get active outage for this device
+  const activeOutage = useDeviceStore(
+    (state) => selectActiveOutage(device.id)(state),
     shallow
   )
 
@@ -62,6 +74,7 @@ function DeviceCardWrapper({ device, isMonitoring, isSelected, onSelect }) {
         status={status}
         isOnline={isOnline}
         isMonitoring={isMonitoring}
+        activeOutage={activeOutage}
       />
       {isMonitoring && (
         <div className="card-hint">
@@ -78,8 +91,16 @@ function DeviceCardWrapper({ device, isMonitoring, isSelected, onSelect }) {
  */
 function Dashboard() {
   const [selectedDeviceId, setSelectedDeviceId] = useState(null)
+  const [showOutageHistory, setShowOutageHistory] = useState(false)
   const devices = useDeviceStore(selectDevices)
   const isMonitoring = useDeviceStore(selectIsMonitoring)
+  
+  // Load outage history on component mount
+  const loadOutageHistory = useDeviceStore((state) => state.loadOutageHistory)
+  
+  useEffect(() => {
+    loadOutageHistory()
+  }, [loadOutageHistory])
 
   const handleDeviceSelect = useCallback((deviceId) => {
     setSelectedDeviceId((current) => (current === deviceId ? null : deviceId))
@@ -114,15 +135,25 @@ function Dashboard() {
 
       <header className="dashboard-header">
         <h2>Device Status Overview</h2>
-        <div className="device-stats">
-          <span className="stat-item">
-            {devices.length} device{devices.length !== 1 ? 's' : ''}
-          </span>
-          {monitoredCount > 0 && (
-            <span className="stat-item monitoring">
-              {monitoredCount} monitoring
+        <div className="dashboard-controls">
+          <div className="device-stats">
+            <span className="stat-item">
+              {devices.length} device{devices.length !== 1 ? 's' : ''}
             </span>
-          )}
+            {monitoredCount > 0 && (
+              <span className="stat-item monitoring">
+                {monitoredCount} monitoring
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            className={`outage-history-toggle ${showOutageHistory ? 'active' : ''}`}
+            onClick={() => setShowOutageHistory(!showOutageHistory)}
+            aria-pressed={showOutageHistory}
+          >
+            {showOutageHistory ? 'Hide' : 'Show'} Outage History
+          </button>
         </div>
       </header>
 
@@ -168,6 +199,19 @@ function Dashboard() {
         <div className="chart-hint">
           <p>Click a monitored device card to view its latency chart.</p>
         </div>
+      )}
+
+      {/* Outage History Section */}
+      {showOutageHistory && (
+        <section className="outage-history-section" aria-label="Outage History">
+          <div className="outage-history-header">
+            <h3>Outage History</h3>
+            <p className="outage-history-description">
+              View historical outage data for all monitored devices
+            </p>
+          </div>
+          <OutageTimeline showTitle={false} />
+        </section>
       )}
     </section>
   )

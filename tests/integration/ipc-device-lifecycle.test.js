@@ -36,10 +36,9 @@ describe('IPC Device Lifecycle Integration', () => {
       expect(content).toContain('Invalid device name')
     })
 
-    it('validates IP address format', () => {
+    it('validates network address format', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
-      expect(content).toContain('validators.ipAddress(data.ipAddress)')
-      expect(content).toContain("throw new Error('Invalid IP address')")
+      expect(content).toContain('if (!(await validators.networkAddress(data.ipAddress)))')
     })
 
     it('validates device type', () => {
@@ -48,10 +47,10 @@ describe('IPC Device Lifecycle Integration', () => {
       expect(content).toContain("Invalid device type")
     })
 
-    it('checks for duplicate IP before creation', () => {
+    it('checks for duplicate network address before creation', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
       expect(content).toContain('db.getDeviceByIp(data.ipAddress)')
-      expect(content).toContain("throw new Error('IP address already exists')")
+      expect(content).toContain("throw new Error('Network address already exists')")
     })
 
     it('calls db.createDevice after validation', () => {
@@ -120,9 +119,9 @@ describe('IPC Device Lifecycle Integration', () => {
       expect(content).toMatch(/device:update.*async.*event, id, updates/)
     })
 
-    it('validates IP address if provided in updates', () => {
+    it('validates network address if provided in updates', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
-      expect(content).toContain('if (dbUpdates.ip_address && !validators.ipAddress(dbUpdates.ip_address))')
+      expect(content).toContain('if (dbUpdates.ip_address && !(await validators.networkAddress(dbUpdates.ip_address)))')
     })
 
     it('checks for duplicate IP when IP is changed', () => {
