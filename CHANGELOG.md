@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.2](https://github.com/Interlaken0/network-device-monitor/compare/v0.2.0...v0.2.2) (2026-05-13)
+
+
+### Features
+
+* **sprint-3-week-2:** Add outage detection UI, theme polish, and security remediation ([#15](https://github.com/Interlaken0/network-device-monitor/issues/15)) ([76ff5b9](https://github.com/Interlaken0/network-device-monitor/commit/76ff5b90524814fbd489d229f9cd87f4320bac2e))
+
+
+### Bug Fixes
+
+* **changelog:** correct heading levels for all version entries ([11177ad](https://github.com/Interlaken0/network-device-monitor/commit/11177ad4a0f110e669b2a158b574e4755df40b94))
+* **changelog:** correct version hierarchy and remove duplicate entries ([4496acd](https://github.com/Interlaken0/network-device-monitor/commit/4496acddc88001b7f7878e8da36866e08ddd3ea8))
+
 ### [0.2.1](https://github.com/Interlaken0/network-device-monitor/compare/v0.2.0...v0.2.1) (2026-05-13)
 
 
