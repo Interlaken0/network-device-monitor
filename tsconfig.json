@@ -16,9 +16,12 @@
     "noImplicitAny": false,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@main/*": ["src/main/*"],
+      "@renderer/*": ["src/renderer/src/*"],
+      "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "out", "coverage", "tests", "**/*.test.js", "**/*.spec.js"]
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "out", "coverage", "dist", "dist-electron", "build"]
 }
