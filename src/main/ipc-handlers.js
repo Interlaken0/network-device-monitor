@@ -443,8 +443,82 @@ export async function registerDatabaseHandlers() {
     }
   })
 
-  // ========== Stats Handler ==========
-  
+  // ========== Historical Aggregation Handlers (Sprint 4) ==========
+
+  ipcMain.handle('history:uptime', async (event, deviceId, startDate, endDate) => {
+    try {
+      if (!deviceId || !startDate || !endDate) {
+        return { success: false, error: 'Device ID, startDate and endDate are required' }
+      }
+      const stats = db.getUptimePercentageByDateRange(deviceId, startDate, endDate)
+      return { success: true, data: stats }
+    } catch (error) {
+      console.error('Error getting uptime by date range:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('history:latency', async (event, deviceId, startDate, endDate) => {
+    try {
+      if (!deviceId || !startDate || !endDate) {
+        return { success: false, error: 'Device ID, startDate and endDate are required' }
+      }
+      const avgLatency = db.getAverageLatencyByDateRange(deviceId, startDate, endDate)
+      return { success: true, data: { deviceId, startDate, endDate, averageLatencyMs: avgLatency } }
+    } catch (error) {
+      console.error('Error getting latency by date range:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('history:outages', async (event, deviceId, startDate, endDate) => {
+    try {
+      if (!deviceId || !startDate || !endDate) {
+        return { success: false, error: 'Device ID, startDate and endDate are required' }
+      }
+      const stats = db.getOutageStatisticsByDateRange(deviceId, startDate, endDate)
+      return { success: true, data: stats }
+    } catch (error) {
+      console.error('Error getting outage stats by date range:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('history:summary', async (event, deviceId, startDate, endDate) => {
+    try {
+      if (!deviceId || !startDate || !endDate) {
+        return { success: false, error: 'Device ID, startDate and endDate are required' }
+      }
+      const summary = db.getHistoricalSummaryByDateRange(deviceId, startDate, endDate)
+      return { success: true, data: summary }
+    } catch (error) {
+      console.error('Error getting historical summary:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('history:allSummaries', async (event, startDate, endDate) => {
+    try {
+      if (!startDate || !endDate) {
+        return { success: false, error: 'startDate and endDate are required' }
+      }
+      const devices = db.getAllDevices()
+      const summaries = devices.map(device => {
+        const summary = db.getHistoricalSummaryByDateRange(device.id, startDate, endDate)
+        return {
+          ...transformDevice(device),
+          ...summary
+        }
+      })
+      return { success: true, data: summaries }
+    } catch (error) {
+      console.error('Error getting all historical summaries:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  // ========== Stats Handler ===========
+
   ipcMain.handle('db:stats', async () => {
     try {
       const stats = db.getStats()

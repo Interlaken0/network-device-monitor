@@ -35,6 +35,18 @@ export const useDeviceStore = create(
       editForm: { name: '', ipAddress: '', deviceType: 'server', location: '' },
       deleteModal: { show: false, deviceId: null, deviceName: '' },
 
+      // Sprint 4: Historical analysis state
+      historicalFilters: {
+        dateRange: { start: '', end: '' },
+        selectedDevices: [],
+        aggregationType: 'avg'
+      },
+      historicalData: [],
+      isLoadingHistorical: false,
+      historicalError: null,
+      queryCache: new Map(),
+      exportProgress: 0,
+
       /**
        * Actions: Device list management
        */
@@ -78,6 +90,98 @@ export const useDeviceStore = create(
       setError: (error) => set({ error }, false, 'setError'),
 
       clearError: () => set({ error: null }, false, 'clearError'),
+
+      /**
+       * Actions: Historical analysis (Sprint 4)
+       */
+      setHistoricalFilters: (filters) =>
+        set(
+          (state) => ({
+            historicalFilters: { ...state.historicalFilters, ...filters }
+          }),
+          false,
+          'setHistoricalFilters'
+        ),
+
+      resetHistoricalFilters: () =>
+        set(
+          {
+            historicalFilters: {
+              dateRange: { start: '', end: '' },
+              selectedDevices: [],
+              aggregationType: 'avg'
+            }
+          },
+          false,
+          'resetHistoricalFilters'
+        ),
+
+      setHistoricalData: (data) => set({ historicalData: data, isLoadingHistorical: false }, false, 'setHistoricalData'),
+
+      setHistoricalLoading: (isLoading) => set({ isLoadingHistorical: isLoading }, false, 'setHistoricalLoading'),
+
+      setHistoricalError: (error) => set({ historicalError: error, isLoadingHistorical: false }, false, 'setHistoricalError'),
+
+      clearHistoricalError: () => set({ historicalError: null }, false, 'clearHistoricalError'),
+
+      setCachedQuery: (queryHash, data, ttlMs = 300000) => {
+        const expiresAt = Date.now() + ttlMs
+        set(
+          (state) => {
+            const newCache = new Map(state.queryCache)
+            newCache.set(queryHash, { data, expiresAt })
+            return { queryCache: newCache }
+          },
+          false,
+          'setCachedQuery'
+        )
+      },
+
+      getCachedQuery: (queryHash) => {
+        const { queryCache } = get()
+        const cached = queryCache.get(queryHash)
+        if (cached && cached.expiresAt > Date.now()) {
+          return cached.data
+        }
+        return null
+      },
+
+      setExportProgress: (progress) => set({ exportProgress: progress }, false, 'setExportProgress'),
+
+      loadHistoricalData: async () => {
+        const { historicalFilters, setHistoricalData, setHistoricalLoading, setHistoricalError } = get()
+        const { dateRange, selectedDevices } = historicalFilters
+
+        if (!dateRange.start || !dateRange.end) {
+          setHistoricalError('Please select a date range')
+          return
+        }
+
+        setHistoricalLoading(true)
+        setHistoricalError(null)
+
+        try {
+          const deviceIds = selectedDevices.length > 0 ? selectedDevices : null
+          let data = []
+
+          if (deviceIds && deviceIds.length > 0) {
+            data = await Promise.all(
+              deviceIds.map(async (id) => {
+                const result = await window.electronAPI?.getHistoricalSummary(id, dateRange.start, dateRange.end)
+                return result?.success ? result.data : null
+              })
+            )
+            data = data.filter(Boolean)
+          } else {
+            const result = await window.electronAPI?.getAllHistoricalSummaries(dateRange.start, dateRange.end)
+            data = result?.success ? result.data : []
+          }
+
+          setHistoricalData(data)
+        } catch (err) {
+          setHistoricalError('Failed to load historical data: ' + err.message)
+        }
+      },
 
       /**
        * Actions: Ping monitoring
@@ -410,3 +514,18 @@ export const selectActiveOutages = (state) => state.activeOutages
  * @returns {Object|null} Active outage or null
  */
 export const selectActiveOutage = (deviceId) => (state) => state.activeOutages[deviceId] || null
+
+/** @returns {Object} Historical filter state */
+export const selectHistoricalFilters = (state) => state.historicalFilters
+
+/** @returns {Array} Historical data results */
+export const selectHistoricalData = (state) => state.historicalData
+
+/** @returns {boolean} Whether historical data is loading */
+export const selectIsLoadingHistorical = (state) => state.isLoadingHistorical
+
+/** @returns {string|null} Historical query error */
+export const selectHistoricalError = (state) => state.historicalError
+
+/** @returns {number} Current export progress (0-100) */
+export const selectExportProgress = (state) => state.exportProgress

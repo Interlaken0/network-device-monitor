@@ -28,6 +28,12 @@ const VALID_CHANNELS = [
   'outage:getActive',
   'outage:getHistory',
   'outage:configureThresholds',
+  // Historical aggregation (Sprint 4)
+  'history:uptime',
+  'history:latency',
+  'history:outages',
+  'history:summary',
+  'history:allSummaries',
   // Database
   'db:stats',
   // Export
@@ -59,6 +65,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getRecentPings: (deviceId, limit) => ipcRenderer.invoke('ping:getRecent', deviceId, limit),
   getPingStats: (deviceId, hours) => ipcRenderer.invoke('ping:getStats', deviceId, hours),
   
+  // Historical aggregation (Sprint 4)
+  getUptimeByDateRange: (deviceId, startDate, endDate) => ipcRenderer.invoke('history:uptime', deviceId, startDate, endDate),
+  getLatencyByDateRange: (deviceId, startDate, endDate) => ipcRenderer.invoke('history:latency', deviceId, startDate, endDate),
+  getOutageStatsByDateRange: (deviceId, startDate, endDate) => ipcRenderer.invoke('history:outages', deviceId, startDate, endDate),
+  getHistoricalSummary: (deviceId, startDate, endDate) => ipcRenderer.invoke('history:summary', deviceId, startDate, endDate),
+  getAllHistoricalSummaries: (startDate, endDate) => ipcRenderer.invoke('history:allSummaries', startDate, endDate),
+
   // Database stats
   getDatabaseStats: () => ipcRenderer.invoke('db:stats'),
 

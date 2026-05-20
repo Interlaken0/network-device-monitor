@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import './App.css'
 import Dashboard from './components/Dashboard'
+import HistoricalAnalysis from './components/HistoricalAnalysis'
 import ToastNotifications from './components/ToastNotifications'
 import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
 import { useThemeStore, selectTheme, selectToggleTheme } from './stores/themeStore'
@@ -109,6 +110,9 @@ function App() {
 
         {/* Dashboard */}
         <Dashboard />
+
+        {/* Historical Analysis (Sprint 4) */}
+        <HistoricalAnalysis />
 
         {/* Add Device Form */}
         <section className="card">
