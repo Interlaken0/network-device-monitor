@@ -147,6 +147,15 @@ class NetworkMonitor {
   }
 
   /**
+   * Get the PingService instance for a monitored device
+   * @param {number} deviceId - Device ID
+   * @returns {PingService|undefined} PingService instance or undefined if not monitored
+   */
+  getService(deviceId) {
+    return this.services.get(deviceId)
+  }
+
+  /**
    * Handle ping result from a device
    * @private
    * @param {number} deviceId - Device ID

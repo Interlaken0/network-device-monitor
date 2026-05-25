@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react'
 import './App.css'
 import Dashboard from './components/Dashboard'
+import HistoricalAnalysis from './components/HistoricalAnalysis'
 import ToastNotifications from './components/ToastNotifications'
 import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
 import { useThemeStore, selectTheme, selectToggleTheme } from './stores/themeStore'
+import { getLatencyColourClass } from './utils/status'
 
 function App() {
   // Theme store
@@ -85,14 +87,6 @@ function App() {
 
   const resetEditForm = useDeviceStore((state) => state.resetEditForm)
 
-  const getLatencyColor = (latencyMs) => {
-    if (!latencyMs) return 'latency-unknown'
-    if (latencyMs < 10) return 'latency-excellent'
-    if (latencyMs < 50) return 'latency-good'
-    if (latencyMs < 150) return 'latency-fair'
-    return 'latency-poor'
-  }
-
   return (
     <div className="app">
       <button
@@ -116,6 +110,9 @@ function App() {
 
         {/* Dashboard */}
         <Dashboard />
+
+        {/* Historical Analysis (Sprint 4) */}
+        <HistoricalAnalysis />
 
         {/* Add Device Form */}
         <section className="card">
@@ -196,7 +193,7 @@ function App() {
 
                     <div className="device-status">
                       {monitoring && pingData ? (
-                        <div className={`latency-badge ${getLatencyColor(pingData.latencyMs)}`}>
+                        <div className={`latency-badge ${getLatencyColourClass(pingData.latencyMs, pingData.success)}`}>
                           {pingData.success ? (
                             <>
                               <span className="latency-value">{pingData.latencyMs}ms</span>

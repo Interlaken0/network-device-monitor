@@ -100,20 +100,8 @@ export const useThemeStore = create(
 // Selector for theme
 export const selectTheme = (state) => state.theme
 
-// Selector for theme loading state
-export const selectIsLoading = (state) => state.isLoading
-
 // Selector for system preference setting
 export const selectUseSystemPreference = (state) => state.useSystemPreference
 
 // Selector for toggle function
 export const selectToggleTheme = (state) => state.toggleTheme
-
-// Selector for setTheme function
-export const selectSetTheme = (state) => state.setTheme
-
-// Selector for setUseSystemPreference function
-export const selectSetUseSystemPreference = (state) => state.setUseSystemPreference
-
-// Selector for getSystemTheme function
-export const selectGetSystemTheme = (state) => state.getSystemTheme

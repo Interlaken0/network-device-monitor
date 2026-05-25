@@ -135,6 +135,15 @@ class DatabaseManager {
       
       CREATE INDEX IF NOT EXISTS idx_outages_device 
         ON outages(device_id);
+      
+      CREATE INDEX IF NOT EXISTS idx_ping_logs_device_time_range 
+        ON ping_logs(device_id, timestamp DESC);
+      
+      CREATE INDEX IF NOT EXISTS idx_outages_start_time 
+        ON outages(start_time DESC);
+      
+      CREATE INDEX IF NOT EXISTS idx_ping_logs_timestamp_device 
+        ON ping_logs(timestamp, device_id);
     `)
   }
   
@@ -578,6 +587,142 @@ class DatabaseManager {
       maxLatencyMs: stats.max_latency,
       outageCount: outages?.outage_count || 0,
       totalDowntimeSeconds: outages?.total_downtime_seconds || 0
+    }
+  }
+
+  // ========== Historical Aggregation Functions (Sprint 4) ==========
+
+  /**
+   * Get average latency for a device within a date range
+   * @param {number} deviceId - Device ID
+   * @param {string} startDate - ISO 8601 date string (e.g., '2026-05-01')
+   * @param {string} endDate - ISO 8601 date string (e.g., '2026-05-13')
+   * @returns {number|null} Average latency in milliseconds or null if no data
+   */
+  getAverageLatencyByDateRange(deviceId, startDate, endDate) {
+    const stmt = this.getStatement(
+      'getAverageLatencyByDateRange',
+      `SELECT AVG(latency_ms) as avg_latency 
+       FROM ping_logs 
+       WHERE device_id = ? 
+         AND success = 1 
+         AND strftime('%Y-%m-%d', timestamp) >= ? 
+         AND strftime('%Y-%m-%d', timestamp) <= ?`
+    )
+    const result = stmt.get(deviceId, startDate, endDate)
+    return result ? result.avg_latency : null
+  }
+
+  /**
+   * Get uptime percentage for a device within a date range
+   * @param {number} deviceId - Device ID
+   * @param {string} startDate - ISO 8601 date string
+   * @param {string} endDate - ISO 8601 date string
+   * @returns {Object} Uptime statistics
+   */
+  getUptimePercentageByDateRange(deviceId, startDate, endDate) {
+    const stmt = this.getStatement(
+      'getUptimeByDateRange',
+      `SELECT 
+        COUNT(*) as total_pings,
+        SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful_pings,
+        SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failed_pings
+       FROM ping_logs 
+       WHERE device_id = ? 
+         AND strftime('%Y-%m-%d', timestamp) >= ? 
+         AND strftime('%Y-%m-%d', timestamp) <= ?`
+    )
+    const result = stmt.get(deviceId, startDate, endDate)
+    
+    const totalPings = result?.total_pings || 0
+    const successfulPings = result?.successful_pings || 0
+    const failedPings = result?.failed_pings || 0
+    
+    const uptimePercent = totalPings > 0
+      ? Math.round((successfulPings / totalPings) * 100 * 100) / 100
+      : null
+
+    return {
+      deviceId,
+      startDate,
+      endDate,
+      totalPings,
+      successfulPings,
+      failedPings,
+      uptimePercent
+    }
+  }
+
+  /**
+   * Get comprehensive outage statistics for a device within a date range
+   * @param {number} deviceId - Device ID
+   * @param {string} startDate - ISO 8601 date string
+   * @param {string} endDate - ISO 8601 date string
+   * @returns {Object} Outage statistics
+   */
+  getOutageStatisticsByDateRange(deviceId, startDate, endDate) {
+    // Get outage count and duration
+    const statsStmt = this.getStatement(
+      'getOutageStatsByDateRange',
+      `SELECT 
+        COUNT(*) as outage_count,
+        SUM(CASE WHEN end_time IS NULL THEN
+          (julianday('now') - julianday(start_time)) * 86400
+          ELSE duration_seconds END) as total_downtime_seconds,
+        AVG(CASE WHEN end_time IS NULL THEN
+          (julianday('now') - julianday(start_time)) * 86400
+          ELSE duration_seconds END) as avg_outage_duration_seconds,
+        MAX(CASE WHEN end_time IS NULL THEN
+          (julianday('now') - julianday(start_time)) * 86400
+          ELSE duration_seconds END) as max_outage_duration_seconds,
+        MIN(CASE WHEN end_time IS NULL THEN
+          (julianday('now') - julianday(start_time)) * 86400
+          ELSE duration_seconds END) as min_outage_duration_seconds,
+        SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical_count,
+        SUM(CASE WHEN severity = 'warning' THEN 1 ELSE 0 END) as warning_count,
+        SUM(CASE WHEN severity = 'info' THEN 1 ELSE 0 END) as info_count
+       FROM outages 
+       WHERE device_id = ? 
+         AND strftime('%Y-%m-%d', start_time) >= ? 
+         AND strftime('%Y-%m-%d', start_time) <= ?`
+    )
+    
+    const stats = statsStmt.get(deviceId, startDate, endDate)
+    
+    return {
+      deviceId,
+      startDate,
+      endDate,
+      outageCount: stats?.outage_count || 0,
+      totalDowntimeSeconds: stats?.total_downtime_seconds || 0,
+      averageOutageDurationSeconds: stats?.avg_outage_duration_seconds || 0,
+      maxOutageDurationSeconds: stats?.max_outage_duration_seconds || 0,
+      minOutageDurationSeconds: stats?.min_outage_duration_seconds || 0,
+      criticalOutages: stats?.critical_count || 0,
+      warningOutages: stats?.warning_count || 0,
+      infoOutages: stats?.info_count || 0
+    }
+  }
+
+  /**
+   * Get comprehensive historical summary for a device across a date range
+   * @param {number} deviceId - Device ID
+   * @param {string} startDate - ISO 8601 date string
+   * @param {string} endDate - ISO 8601 date string
+   * @returns {Object} Complete historical summary
+   */
+  getHistoricalSummaryByDateRange(deviceId, startDate, endDate) {
+    const uptime = this.getUptimePercentageByDateRange(deviceId, startDate, endDate)
+    const latency = this.getAverageLatencyByDateRange(deviceId, startDate, endDate)
+    const outages = this.getOutageStatisticsByDateRange(deviceId, startDate, endDate)
+
+    return {
+      deviceId,
+      startDate,
+      endDate,
+      uptime,
+      averageLatencyMs: latency,
+      outages
     }
   }
 
