@@ -158,28 +158,30 @@ function HistoricalAnalysis() {
 
           <div className="historical-table-card card">
             <h3>Device Breakdown</h3>
-            <table className="historical-table">
-              <thead>
-                <tr>
-                  <th>Device</th>
-                  <th>Uptime %</th>
-                  <th>Avg Latency</th>
-                  <th>Outages</th>
-                  <th>Downtime</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((device) => (
-                  <tr key={device.deviceId}>
-                    <td>{device.name || `Device ${device.deviceId}`}</td>
-                    <td>{device.uptime?.uptimePercent !== null ? `${device.uptime.uptimePercent}%` : 'N/A'}</td>
-                    <td>{device.averageLatencyMs !== null ? `${Math.round(device.averageLatencyMs)}ms` : 'N/A'}</td>
-                    <td>{device.outages?.outageCount || 0}</td>
-                    <td>{formatDowntime(device.outages?.totalDowntimeSeconds || 0)}</td>
+            <div className="virtual-table-container">
+              <table className="historical-table">
+                <thead>
+                  <tr>
+                    <th>Device</th>
+                    <th>Uptime %</th>
+                    <th>Avg Latency</th>
+                    <th>Outages</th>
+                    <th>Downtime</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.map((device) => (
+                    <tr key={device.deviceId}>
+                      <td>{device.name || `Device ${device.deviceId}`}</td>
+                      <td>{device.uptime?.uptimePercent !== null ? `${device.uptime.uptimePercent}%` : 'N/A'}</td>
+                      <td>{device.averageLatencyMs !== null ? `${Math.round(device.averageLatencyMs)}ms` : 'N/A'}</td>
+                      <td>{device.outages?.outageCount || 0}</td>
+                      <td>{formatDowntime(device.outages?.totalDowntimeSeconds || 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
       )}

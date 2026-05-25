@@ -2,6 +2,8 @@ import React, { useEffect } from 'react'
 import './App.css'
 import Dashboard from './components/Dashboard'
 import HistoricalAnalysis from './components/HistoricalAnalysis'
+import OutageAnalysis from './components/OutageAnalysis'
+import ExportManager from './components/ExportManager'
 import ToastNotifications from './components/ToastNotifications'
 import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
 import { useThemeStore, selectTheme, selectToggleTheme } from './stores/themeStore'
@@ -113,6 +115,12 @@ function App() {
 
         {/* Historical Analysis (Sprint 4) */}
         <HistoricalAnalysis />
+
+        {/* Outage Analysis (Sprint 4) */}
+        <OutageAnalysis />
+
+        {/* Export Manager (Sprint 4) */}
+        <ExportManager />
 
         {/* Add Device Form */}
         <section className="card">
