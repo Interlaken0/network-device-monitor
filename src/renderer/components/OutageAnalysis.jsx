@@ -67,6 +67,7 @@ function OutageAnalysis() {
   const outageHistory = useDeviceStore((state) => state.outageHistory)
   const devices = useDeviceStore((state) => state.devices)
   const [selectedDevice, setSelectedDevice] = useState('all')
+  const [selectedOutage, setSelectedOutage] = useState(null)
 
   // Filter outages by selected device
   const filteredOutages = useMemo(() => {
@@ -268,7 +269,21 @@ function OutageAnalysis() {
                 </thead>
                 <tbody>
                   {availabilityData.map((device) => (
-                    <tr key={device.name}>
+                    <tr
+                      key={device.name}
+                      className="outage-row-clickable"
+                      onClick={() => {
+                        const deviceOutages = outageHistory.filter(
+                          (o) => o.deviceId === devices.find((d) => d.name === device.name)?.id
+                        )
+                        if (deviceOutages.length > 0) {
+                          setSelectedOutage({
+                            deviceName: device.name,
+                            outages: deviceOutages
+                          })
+                        }
+                      }}
+                    >
                       <td>{device.name}</td>
                       <td>
                         <span
@@ -295,6 +310,67 @@ function OutageAnalysis() {
             </div>
           )}
         </>
+      )}
+
+      {/* Drill-down modal for outage details */}
+      {selectedOutage && (
+        <div className="modal-overlay" onClick={() => setSelectedOutage(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Outage Details: {selectedOutage.deviceName}</h3>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setSelectedOutage(null)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <table className="historical-table">
+                <thead>
+                  <tr>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Duration</th>
+                    <th>Severity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOutage.outages.map((outage, index) => {
+                    const duration = outage.durationSeconds ||
+                      (outage.endTime && outage.startTime
+                        ? (new Date(outage.endTime) - new Date(outage.startTime)) / 1000
+                        : null)
+                    const severity = outage.severity || categoriseDuration(duration)
+                    return (
+                      <tr key={index}>
+                        <td>{outage.startTime ? new Date(outage.startTime).toLocaleString() : 'Unknown'}</td>
+                        <td>{outage.endTime ? new Date(outage.endTime).toLocaleString() : 'Ongoing'}</td>
+                        <td>{formatDuration(duration)}</td>
+                        <td>
+                          <span
+                            style={{
+                              backgroundColor: `${SEVERITY_COLOURS[severity]}20`,
+                              color: SEVERITY_COLOURS[severity],
+                              padding: '0.2rem 0.5rem',
+                              borderRadius: '4px',
+                              fontWeight: 600,
+                              textTransform: 'capitalize'
+                            }}
+                          >
+                            {severity}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   )

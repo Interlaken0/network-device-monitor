@@ -2,7 +2,7 @@
 
 A desktop application for real-time network infrastructure monitoring, built with Electron, React, and SQLite.
 
-**Sprint 1 Status:** MVP Complete - Single/Multi-device monitoring with database persistence
+**Sprint 4 Status:** Historical Analysis & Reporting Complete - Query builder, outage analysis, data export, and security hardening
 
 ---
 
@@ -144,25 +144,48 @@ Generates coverage report in `coverage/` directory.
 network-device-monitor/
 ├── docs/                       # Documentation
 │   ├── agile-strategy.md       # Sprint planning & SDLC
-│   └── technical-deep-dive.md  # Architecture decisions
+│   ├── technical-deep-dive.md  # Architecture decisions
+│   └── user-stories.md         # User stories and acceptance criteria
 ├── src/
 │   ├── main/                   # Electron main process
 │   │   ├── index.js            # App entry point, window creation
 │   │   ├── database.js         # SQLite database manager
 │   │   ├── ipc-handlers.js     # IPC communication handlers
 │   │   ├── network-monitor.js  # Multi-device coordinator
-│   │   └── ping-service.js     # ICMP ping implementation
+│   │   ├── ping-service.js     # ICMP ping implementation
+│   │   └── export-service.js   # CSV/HTML export generation
 │   ├── preload/                # Preload scripts
 │   │   └── index.js            # Secure API bridge
 │   └── renderer/               # React frontend
 │       ├── App.jsx             # Main application component
 │       ├── App.css             # Styles
-│       └── index.html          # HTML entry point
+│       ├── index.html          # HTML entry point
+│       ├── stores/
+│       │   ├── deviceStore.js  # Zustand store (devices, outages, historical data)
+│       │   └── themeStore.js   # Theme management
+│       ├── components/
+│       │   ├── Dashboard.jsx           # Real-time device monitoring
+│       │   ├── DeviceStatusCard.jsx    # Individual device status display
+│       │   ├── LatencyChart.jsx        # Real-time latency line chart
+│       │   ├── QueryBuilder.jsx        # Historical data filters
+│       │   ├── HistoricalAnalysis.jsx  # Historical dashboard
+│       │   ├── SummaryCards.jsx        # Aggregated statistics
+│       │   ├── OutageAnalysis.jsx      # Outage reports & drill-down
+│       │   ├── OutageTimeline.jsx      # Visual outage timeline
+│       │   ├── ExportManager.jsx       # CSV/HTML export UI
+│       │   └── ToastNotifications.jsx  # Event notifications
+│       └── utils/
+│           ├── chart-theme.js  # Theme-aware chart colours
+│           └── status.js       # Status colour helpers
 ├── tests/
 │   ├── unit/                   # Unit tests
 │   │   ├── database.test.js
+│   │   ├── database-aggregations-integration.test.js
 │   │   ├── ping-service.test.js
 │   │   ├── network-monitor.test.js
+│   │   ├── outage-detection.test.js
+│   │   ├── sprint4-components.test.js
+│   │   ├── sprint4-security.test.js
 │   │   └── validators.test.js
 │   └── mocks/                  # Test mocks
 ├── out/                        # Build output (generated on first build)
@@ -228,25 +251,43 @@ The preload script should output to `out/preload/index.cjs` (not `.mjs`).
 
 ---
 
-## Key Features (Sprint 1 MVP)
+## Key Features
 
+### Sprint 1 — Real-time Monitoring MVP
 - **Electron desktop app** with React UI
 - **SQLite database** for device and ping data persistence
 - **ICMP ping monitoring** with configurable intervals
-- **Device CRUD** - Add, list, delete network devices
-- **Real-time latency display** with color-coded status
-- **Cross-platform** (Windows, macOS, Linux support via Electron)
+- **Device CRUD** — Add, edit, delete network devices
+- **Real-time latency display** with colour-coded status
+- **Cross-platform** (Windows, macOS, Linux via Electron)
 - **Secure IPC** with context isolation and sandbox
 - **Unit testing** with Jest
 
+### Sprint 2 — Outage Detection & Device Management
+- **Device editing/updating** with inline forms
+- **Outage detection engine** — automatic outage creation when pings fail
+- **Outage timeline** — visual timeline of downtime events
+- **Theme switching** — light and dark mode support
+- **Toast notifications** for device events
+
+### Sprint 4 — Historical Analysis & Reporting
+- **Query Builder** — Filter historical data by date range, device, and aggregation type
+- **Historical Analysis Dashboard** — Summary cards, latency charts, and device breakdown tables
+- **Outage Analysis** — Severity breakdown charts, device availability percentages, and drill-down outage details
+- **Export Manager** — Export ping logs and outages to CSV or HTML report templates (Uptime, Latency, Outage)
+- **Virtual scrolling** on large data tables for performance
+- **Security hardening** — Rate limiting on exports, input sanitisation, path traversal prevention
+- **403 tests** covering all new components and security utilities
+
 ---
 
-## Next Steps (Sprint 2)
+## Next Steps (Sprint 5 — Alerting & Notifications)
 
-- [ ] Device editing/updating
-- [ ] Advanced query dashboard (average latency, uptime stats)
-- [ ] Historical data visualisation
-- [ ] Alert thresholds and notifications
+- [ ] Per-device alert threshold configuration (latency, consecutive failures, packet loss)
+- [ ] Real-time alert engine with state management (Triggered → Unacknowledged → Acknowledged → Resolved)
+- [ ] Toast notifications and alert counter badge
+- [ ] Alert history log with acknowledgement
+- [ ] Alert deduplication to prevent notification fatigue
 
 ---
 
