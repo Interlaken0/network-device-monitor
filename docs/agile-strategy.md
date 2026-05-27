@@ -289,32 +289,23 @@ removeListener: (channel, callback) => {
 
 ---
 
-### Sprint 4: Historical Analysis & Reporting (Weeks 7-8)
+### Sprint 4: Historical Analysis & Reporting (Weeks 7-8) — COMPLETE
+**Dates:** 13th May – 27th May 2026  
 **Goal:** Data analysis capabilities and outage reporting
 
-**User Stories:**
-1. **Query Builder:** Historical data filtering (5 pts)
-   - Date range selection
-   - Device filtering
-   - Aggregation options
-   
-2. **Outage Report:** Downtime analysis view (5 pts)
-   - Outage timeline visualisation
-   - Duration calculations
-   - Availability percentage
-   
-3. **Export Functionality:** Data export to CSV (3 pts)
-   - Query result export
-   - Report generation
-   
-4. **Performance Optimisation:** Query performance (3 pts)
-   - Database indexing
-   - Pagination implementation
-   - Lazy loading strategies
+**Status:** All user stories delivered. Week 1 merged to `main` via PR #16. Week 2 on branch `feature/sprint-4-week-2`.
 
-**Sprint 4 Deliverable:** Users can query historical data, view outage reports, and export data for external analysis.
+**User Stories Delivered:**
+1. **Query Builder:** Historical data filtering (5 pts) — `QueryBuilder.jsx` with date range picker, device multi-select, and aggregation dropdown
+2. **Historical Analysis Dashboard:** (5 pts) — `HistoricalAnalysis.jsx` with `SummaryCards`, latency bar charts, and device breakdown table
+3. **Outage Report:** Downtime analysis view (5 pts) — `OutageAnalysis.jsx` with severity pie charts, device outage bar charts, availability table, and drill-down modal
+4. **Export Functionality:** Data export to CSV and HTML (5 pts) — `ExportManager.jsx` with column selection, report templates (Uptime, Latency, Outage), progress tracking, and save dialog
+5. **Performance Optimisation:** Query performance (3 pts) — Database indexes for time-series queries, query result caching in Zustand store, virtual scrolling on large tables
+6. **Security Hardening:** (3 pts) — Rate limiting on export IPC handlers, input sanitisation for query parameters, path traversal prevention on file saves
 
-**KSBs Addressed:** S3, S6, S16, K10, K12
+**Sprint 4 Deliverable:** Users can query historical data by date range and device, view detailed outage reports with availability metrics, and export data to CSV or styled HTML reports. Security controls prevent export abuse and file system traversal.
+
+**KSBs Addressed:** S3, S5, S6, S13, S16, K10, K12, B1, B6
 
 ---
 

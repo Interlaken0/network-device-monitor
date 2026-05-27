@@ -13,6 +13,72 @@ import networkMonitor from './network-monitor.js'
 import exportService from './export-service.js'
 import dns from 'dns'
 
+// ========== Security Utilities ==========
+
+/**
+ * Simple rate limiter to prevent export abuse.
+ * Tracks request timestamps per channel and blocks rapid-fire requests.
+ */
+class RateLimiter {
+  constructor(windowMs = 5000, maxRequests = 10) {
+    this.windowMs = windowMs
+    this.maxRequests = maxRequests
+    this.requests = new Map()
+  }
+
+  isAllowed(channel) {
+    const now = Date.now()
+    const channelRequests = this.requests.get(channel) || []
+
+    // Remove requests outside the time window
+    const validRequests = channelRequests.filter((ts) => now - ts < this.windowMs)
+    this.requests.set(channel, validRequests)
+
+    if (validRequests.length >= this.maxRequests) {
+      return false
+    }
+
+    validRequests.push(now)
+    return true
+  }
+}
+
+const exportRateLimiter = new RateLimiter(60000, 5) // 5 exports per minute
+
+/**
+ * Validates a filename to prevent path traversal attacks.
+ *
+ * @param {string} filename - The filename to validate
+ * @returns {boolean} True if the filename is safe
+ */
+function isSafeFilename(filename) {
+  if (!filename || typeof filename !== 'string') return false
+  // Reject paths with directory traversal
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) return false
+  // Only allow alphanumeric, dots, dashes, underscores and spaces
+  return /^[\w\-. ]+$/.test(filename)
+}
+
+/**
+ * Sanitises export query parameters to prevent injection.
+ *
+ * @param {Object} query - Raw query from renderer
+ * @returns {Object} Sanitised query
+ */
+function sanitiseExportQuery(query) {
+  const validTypes = new Set(['ping_logs', 'outages', 'devices', 'summary'])
+  const validTemplates = new Set(['uptime', 'latency', 'outage'])
+
+  return {
+    type: validTypes.has(query?.type) ? query.type : 'devices',
+    deviceId: query?.deviceId ? parseInt(query.deviceId) || undefined : undefined,
+    startDate: query?.startDate && /^\d{4}-\d{2}-\d{2}$/.test(query.startDate) ? query.startDate : undefined,
+    endDate: query?.endDate && /^\d{4}-\d{2}-\d{2}$/.test(query.endDate) ? query.endDate : undefined,
+    limit: query?.limit ? Math.min(parseInt(query.limit) || 100, 10000) : 1000,
+    template: validTemplates.has(query?.template) ? query.template : 'uptime'
+  }
+}
+
 // Transform database snake_case fields to camelCase for frontend
 function transformDevice(device) {
   if (!device) return null
@@ -530,15 +596,25 @@ export async function registerDatabaseHandlers() {
   })
 
   // ========== Export Handlers ==========
-  
+
   ipcMain.handle('export:csv', async (event, query, columns) => {
     try {
-      // Validate query parameters
-      if (!query.type) {
+      // Rate limiting
+      if (!exportRateLimiter.isAllowed('export:csv')) {
+        return { success: false, error: 'Rate limit exceeded. Please wait before exporting again.' }
+      }
+
+      // Sanitise and validate query
+      const sanitisedQuery = sanitiseExportQuery(query)
+      const sanitisedColumns = Array.isArray(columns)
+        ? columns.filter((c) => typeof c === 'string' && /^[\w_]+$/.test(c))
+        : []
+
+      if (!sanitisedQuery.type) {
         throw new Error('Export type is required')
       }
-      
-      const csvContent = await exportService.generateCSV(query, columns || [])
+
+      const csvContent = await exportService.generateCSV(sanitisedQuery, sanitisedColumns)
       return { success: true, data: csvContent }
     } catch (error) {
       console.error('Error generating CSV export:', error)
@@ -548,12 +624,19 @@ export async function registerDatabaseHandlers() {
 
   ipcMain.handle('export:html', async (event, query, template) => {
     try {
-      // Validate query parameters
-      if (!query.type) {
+      // Rate limiting
+      if (!exportRateLimiter.isAllowed('export:html')) {
+        return { success: false, error: 'Rate limit exceeded. Please wait before exporting again.' }
+      }
+
+      // Sanitise and validate query
+      const sanitisedQuery = sanitiseExportQuery(query)
+
+      if (!sanitisedQuery.type) {
         throw new Error('Export type is required')
       }
-      
-      const htmlContent = await exportService.generateHTMLReport(query, template || {})
+
+      const htmlContent = await exportService.generateHTMLReport(sanitisedQuery, template || {})
       return { success: true, data: htmlContent }
     } catch (error) {
       console.error('Error generating HTML export:', error)
@@ -567,7 +650,12 @@ export async function registerDatabaseHandlers() {
       if (!content || !filename) {
         throw new Error('Content and filename are required')
       }
-      
+
+      // Prevent path traversal
+      if (!isSafeFilename(filename)) {
+        throw new Error('Invalid filename. Path traversal is not allowed.')
+      }
+
       const result = await exportService.saveFile(content, filename, filters)
       return { success: true, data: result }
     } catch (error) {

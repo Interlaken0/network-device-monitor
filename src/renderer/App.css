@@ -1916,3 +1916,218 @@ input:focus-visible {
   }
 }
 
+/* ========== Sprint 4: Outage Analysis Styles ========== */
+
+.outage-analysis {
+  margin-top: 1.5rem;
+}
+
+.outage-analysis h2 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.outage-controls {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.availability-badge {
+  display: inline-block;
+}
+
+/* ========== Sprint 4: Export Manager Styles ========== */
+
+.export-manager {
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.export-manager h2 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.export-section {
+  margin-bottom: 1.25rem;
+}
+
+.format-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.format-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.format-btn:hover {
+  background: var(--bg-hover);
+}
+
+.format-btn.active {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.export-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.export-result {
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.export-result.success {
+  background: #28a74520;
+  color: #28a745;
+  border: 1px solid #28a74540;
+}
+
+.export-result.error {
+  background: #dc354520;
+  color: #dc3545;
+  border: 1px solid #dc354540;
+}
+
+/* ========== Sprint 4: Virtual Scrolling Table Styles ========== */
+
+.virtual-table-container {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.virtual-table-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.virtual-table-container::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+.virtual-table-container::-webkit-scrollbar-thumb {
+  background: var(--border-card);
+  border-radius: 4px;
+}
+
+.virtual-table-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ========== Sprint 4: Outage Drill-down Modal ========== */
+
+.outage-row-clickable {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.outage-row-clickable:hover {
+  background-color: var(--bg-hover);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/Interlaken0/network-device-monitor/compare/v0.3.0...v0.4.0) (2026-05-27)
+
+
+### Features
+
+* **sprint-4-week-1:** Historical analysis dashboard with query builder, summary cards, and data aggregation ([#16](https://github.com/Interlaken0/network-device-monitor/issues/16)) ([163a69f](https://github.com/Interlaken0/network-device-monitor/commit/163a69f1e5412d897f1295b40d8bb32bb143bc2b))
+* **sprint4-week2:** drill-down outage modal, docs update, retrospective ([51623df](https://github.com/Interlaken0/network-device-monitor/commit/51623df21d694f9ef00bd5bfa6d2f1d99d7f9338))
+* **sprint4:** Week 2 — OutageAnalysis, ExportManager, security hardening, tests ([64f75b4](https://github.com/Interlaken0/network-device-monitor/commit/64f75b4c308283141f86098ed848f1d535ebbd01))
+
 ### [0.2.2](https://github.com/Interlaken0/network-device-monitor/compare/v0.2.0...v0.2.2) (2026-05-13)
 
 
