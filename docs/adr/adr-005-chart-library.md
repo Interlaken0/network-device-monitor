@@ -68,7 +68,7 @@ Chart configuration:
 ```
 
 ## References
-- `src/renderer/components/LatencyChart.jsx` — Latency visualisation component with Recharts
+- `src/renderer/components/dashboard/LatencyChart.jsx` — Latency visualisation component with Recharts
 - `package.json` — recharts ^3.8.1 in dependencies
 - `src/renderer/App.css` — Chart styling including tooltip and container styles
 - Recharts documentation: https://recharts.org/

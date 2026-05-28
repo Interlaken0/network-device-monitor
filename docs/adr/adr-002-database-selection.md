@@ -57,9 +57,9 @@ Schema design:
 - `outages` table — Aggregated downtime events
 
 ## References
-- `src/main/database.js` — DatabaseManager singleton with prepared statement caching
-- `src/main/ipc-handlers.js` — IPC handlers using synchronous database operations
-- `tests/unit/database.test.js` — Unit tests with in-memory sqlite3
+- `src/main/db/database.js` — DatabaseManager singleton with prepared statement caching
+- `src/main/ipc/handlers.js` — IPC handlers using synchronous database operations
+- `tests/unit/main/database.test.js` — Unit tests with in-memory sqlite3
 - `docs/technical-deep-dive.md` — Section 2.3 for detailed database comparison
 
 ---

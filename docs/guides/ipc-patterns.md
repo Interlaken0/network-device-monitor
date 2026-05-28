@@ -111,7 +111,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 })
 ```
 
-**Main Handler:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc-handlers.js:97-125`
+**Main Handler:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js:97-125`
 
 ```javascript
 ipcMain.handle('device:create', async (event, data) => {
@@ -179,7 +179,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
 - `ping:result` channel is whitelisted in `VALID_CHANNELS`
 - `onPingResult` is exposed in preload
-- NetworkMonitor has `onDeviceStatusChange` and `onAggregateStatus` callbacks `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\network-monitor.js:17-18`
+- NetworkMonitor has `onDeviceStatusChange` and `onAggregateStatus` callbacks `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\services\network-monitor.js:17-18`
 - **Missing:** Callbacks are not assigned to send `webContents.send('ping:result', ...)` events
 
 **To Implement:** Assign callbacks in `registerDatabaseHandlers()` to broadcast events:
@@ -202,7 +202,7 @@ networkMonitor.onDeviceStatusChange = (deviceId, status) => {
 
 ### Input Validation Layer
 
-All user-facing inputs are validated in `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc-handlers.js:15-29`:
+All user-facing inputs are validated in `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js:15-29`:
 
 ```javascript
 const validators = {
@@ -237,7 +237,7 @@ const validators = {
 
 ### Structured Error Responses
 
-All handlers return consistent response objects `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc-handlers.js:121-124`:
+All handlers return consistent response objects `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js:121-124`:
 
 ```javascript
 return { 
@@ -300,18 +300,18 @@ The cleanup function uses `ipcRenderer.removeListener` with the same callback re
 |----------|---------------------------|---------|
 | Context Isolation | `src/main/index.js:34` | Prevents renderer from accessing Node.js APIs |
 | Channel Whitelisting | `src/preload/index.js:9-27` | Restricts IPC to defined channels only |
-| Input Validation | `src/main/ipc-handlers.js:15-29` | Validates all inputs in trusted main process |
-| Error Sanitisation | `src/main/ipc-handlers.js:121-124` | Prevents information leakage to renderer |
+| Input Validation | `src/main/ipc/handlers.js:15-29` | Validates all inputs in trusted main process |
+| Error Sanitisation | `src/main/ipc/handlers.js:121-124` | Prevents information leakage to renderer |
 | Structured Responses | All handlers return `{success, data/error}` | Consistent error handling across all IPC |
 | Cleanup Functions | `src/preload/index.js:55-58` | Prevents memory leaks from listeners |
 
 ## References
 
-- **IPC Handlers:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc-handlers.js`
+- **IPC Handlers:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js`
 - **Preload Bridge:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js`
 - **Main Process:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\index.js`
-- **Network Monitor:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\network-monitor.js`
-- **Ping Service:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ping-service.js`
+- **Network Monitor:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\services\network-monitor.js`
+- **Ping Service:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\services\ping-service.js`
 
 ---
 

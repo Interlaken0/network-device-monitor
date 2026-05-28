@@ -11,7 +11,7 @@ import {
   Cell
 } from 'recharts'
 import QueryBuilder from './QueryBuilder'
-import SummaryCards from './SummaryCards'
+import SummaryCards from '../dashboard/SummaryCards'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useThemeStore } from '../stores/themeStore'
 import { getChartColours } from '../utils/chart-theme'

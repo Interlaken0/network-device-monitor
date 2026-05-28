@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 describe('CSP Security Configuration', () => {
-  const indexPath = path.join(__dirname, '../../src/main/index.js')
+  const indexPath = path.join(__dirname, '../../../src/main/index.js')
 
   describe('File Existence', () => {
     it('index.js exists', () => {

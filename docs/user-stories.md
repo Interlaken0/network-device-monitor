@@ -653,10 +653,72 @@ Backbone: Monitor Network Devices
 | 2 | 1.1 (extended), 1.2, 1.3 | S1, S3, S4, S7 | Jeff needs multi-device support for his 40-50 infrastructure devices |
 | 3 | 2.1 (extended), 2.2 | S2, S8, S16, K4 | Visual dashboard priority — Jeff wants to spot issues at a glance |
 | 4 | 4.1, 4.2 (basic) | S3, S6, S16, K10 | Historical data for capacity planning discussions with management |
-| 5 | 3.1, 3.2 | S5, S6, S13, B6 | Alerting phase — Jeff wants proactive notifications, not just reactive checks |
+| 5 | 3.1, 3.2 (Alert Config, Alert Engine, Alert Log, Visual Alerts, Testing) | S1, S2, S3, S4, S5, S6, S10, S13, S17, B6 | Alerting phase — Jeff wants proactive notifications, not just reactive checks |
 | 6 | 4.2 (extended), polish | S10, S12, S15 | Production packaging and documentation for handover to Jeff |
 
 **Note:** Sprint allocation reflects discussions between Greg (apprentice) and Jeff (employer/mentor/user) during backlog refinement sessions.
+
+---
+
+## Sprint 5 Week 1 — Daily Task Breakdown
+
+**Dates:** 28th May – 3rd June 2026 (Thu–Fri, Mon–Wed)  
+**Goal:** Backend alerting infrastructure  
+**Total Story Points:** 11
+
+---
+
+### Thursday 28th May — Sprint Kickoff & Database Foundation
+
+- Morning sprint planning session with Jeff
+- Create `alert_configurations` database table (Story 1: Alert Configuration)
+- Create `alerts` table with indexes for event logging (Story 3: Alert Log)
+- Scaffold `AlertConfiguration.jsx` component structure and route
+
+**Target Deliverable:** Database schema committed, React component shell rendering
+
+---
+
+### Friday 29th May — Configuration UI & Persistence
+
+- Build threshold input UI in `AlertConfiguration.jsx` (latency, failures, packet loss)
+- Implement severity level selector and enable/disable toggle
+- Add form validation for threshold ranges
+- Persist alert settings to SQLite via IPC handler
+
+**Target Deliverable:** Fully functional alert configuration screen with validation
+
+---
+
+### Monday 1st June — Alert Engine Core
+
+- Implement threshold checking logic in `network-monitor.js`
+- Build alert state machine (triggered → unacknowledged → acknowledged → resolved)
+- Wire state transitions into the monitoring loop
+
+**Target Deliverable:** Alerts generated internally when thresholds are breached
+
+---
+
+### Tuesday 2nd June — Deduplication & IPC Layer
+
+- Add alert deduplication to prevent repeat notifications
+- Create alert generation IPC handler (main → renderer)
+- Implement alert CRUD operations in `db/database.js`
+- Add alert query IPC handlers for renderer access
+
+**Target Deliverable:** Alert engine fully wired to database and IPC
+
+---
+
+### Wednesday 3rd June — Testing, Review & Close
+
+- Write unit tests for alert engine, configuration, and database queries
+- Verify coverage target (≥80%)
+- Conduct security review (parameterised queries, IPC validation)
+- Final commits and Definition of Done check
+
+**Target Deliverable:** All stories tested, reviewed, and committed to main
 
 ---
 

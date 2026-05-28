@@ -1,5 +1,5 @@
 import PingService from './ping-service.js'
-import { getDatabase } from './database.js'
+import { getDatabase } from '../db/database.js'
 import { BrowserWindow } from 'electron'
 
 /**

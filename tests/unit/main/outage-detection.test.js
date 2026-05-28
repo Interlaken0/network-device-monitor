@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals'
-import PingService from '@/main/ping-service.js'
+import PingService from '@/main/services/ping-service.js'
 
 describe('Outage Detection', () => {
   let service

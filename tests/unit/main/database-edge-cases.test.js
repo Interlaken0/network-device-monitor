@@ -15,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 describe('Database Edge Cases', () => {
-  const databasePath = path.join(__dirname, '../../src/main/database.js')
+  const databasePath = path.join(__dirname, '../../../src/main/db/database.js')
 
   describe('File Existence', () => {
     it('database.js exists', () => {

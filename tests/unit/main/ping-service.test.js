@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals'
 import ping from 'ping'
-import PingService from '@/main/ping-service.js'
+import PingService from '@/main/services/ping-service.js'
 
 describe('PingService', () => {
   let service
@@ -130,7 +130,7 @@ describe('NetworkMonitor', () => {
   let NetworkMonitor
 
   beforeEach(async () => {
-    const networkModule = await import('@/main/network-monitor.js')
+    const networkModule = await import('@/main/services/network-monitor.js')
     NetworkMonitor = networkModule.NetworkMonitor
     monitor = new NetworkMonitor()
     jest.clearAllMocks()
@@ -167,7 +167,7 @@ describe('NetworkMonitor', () => {
   })
 
   it('exports singleton instance', async () => {
-    const networkModule = await import('@/main/network-monitor.js')
+    const networkModule = await import('@/main/services/network-monitor.js')
     expect(networkModule.default).toBeDefined()
   })
 })

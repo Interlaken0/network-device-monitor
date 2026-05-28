@@ -1,5 +1,5 @@
 import ping from 'ping'
-import { getDatabase } from './database.js'
+import { getDatabase } from '../db/database.js'
 import os from 'os'
 
 /**

@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals'
-import { NetworkMonitor } from '@/main/network-monitor.js'
+import { NetworkMonitor } from '@/main/services/network-monitor.js'
 
 describe('NetworkMonitor', () => {
   let monitor
@@ -61,7 +61,7 @@ describe('NetworkMonitor', () => {
 
 describe('NetworkMonitor Singleton', () => {
   it('exports singleton instance as default', async () => {
-    const networkModule = await import('@/main/network-monitor.js')
+    const networkModule = await import('@/main/services/network-monitor.js')
     expect(networkModule.default).toBeDefined()
     expect(networkModule.default).toBeInstanceOf(NetworkMonitor)
   })

@@ -7,10 +7,16 @@ This folder contains all tests for the AMF Network Device Monitor application.
 ```
 tests/
 ├── unit/                    # Unit tests for individual functions
-│   ├── validators.test.js   # Input validation (IP, name, device type)
-│   └── database.test.js     # Database operations
+│   ├── main/                # Main process tests
+│   │   ├── validators.test.js   # Input validation (IP, name, device type)
+│   │   ├── database.test.js     # Database operations
+│   │   ├── ping-service.test.js # ICMP ping service
+│   │   └── ...
+│   └── renderer/            # Renderer process tests
+│       └── sprint4-components.test.js  # Component logic
 ├── integration/             # Integration tests
-│   └── ipc-handlers.integration.test.js  # IPC handler logic
+│   ├── ipc-handlers.integration.test.js  # IPC handler logic
+│   └── ipc-device-lifecycle.test.js    # Device CRUD workflows
 └── mocks/                   # Mock implementations
     └── electron.js          # Electron API mocks
 ```
@@ -43,18 +49,22 @@ npm run test:coverage
 |------------|-------|---------|
 | Validators | 48 | IP address (IPv4/IPv6), device name, device type validation |
 | Database | 11 | Device CRUD, ping logging, outage tracking |
+| Ping Service | 15 | ICMP operations, outage detection, cancellation |
+| Network Monitor | 8 | Multi-device coordination, lifecycle management |
 | IPC Handlers | 6 | Handler logic for device creation, updates, validation flows |
+| Component Logic | 12 | Data transformation, rendering logic |
+| Security | 20 | CSP, rate limiting, path traversal prevention |
 
-**Total: 65 tests**
+**Total: 413 tests**
 
 ## What Each Test Covers
 
-### Validators (`unit/validators.test.js`)
+### Validators (`unit/main/validators.test.js`)
 - **IP Validation**: IPv4 format, IPv6 format, invalid rejection
 - **Device Name**: Length (1-100 chars), empty/null/undefined rejection
 - **Device Type**: Valid types (server, router, printer, switch), case sensitivity
 
-### Database (`unit/database.test.js`)
+### Database (`unit/main/database.test.js`)
 - **Device CRUD**: Create, read, update, soft delete, duplicate IP rejection
 - **Ping Logs**: Record success/failure, calculate averages
 - **Outages**: Start, resolve, find active outages

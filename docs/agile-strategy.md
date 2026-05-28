@@ -312,33 +312,34 @@ removeListener: (channel, callback) => {
 ### Sprint 5: Alerting & Notifications (Weeks 9-10)
 **Goal:** Proactive alerting for network issues
 
-**User Stories:**
+**Week 1 (28th May – 3rd June): Alerting Foundation — 11 pts**
 1. **Alert Configuration:** Customisable thresholds (3 pts)
    - Latency threshold per device
    - Consecutive failure count
    - Alert severity levels
-   
+
 2. **Alert Engine:** Real-time alert generation (5 pts)
    - Threshold monitoring
    - Alert state management
    - Alert deduplication
-   
-3. **Visual Alerts:** UI notification system (3 pts)
+
+3. **Alert Log:** Persistent alert storage (3 pts)
+   - Alert database table
+   - Alert correlation with outages
+
+**Week 2 (4th June – 10th June): Alerting UI & Testing — 6 pts**
+4. **Visual Alerts:** UI notification system (3 pts)
    - Toast notifications
    - Alert history log
    - Unacknowledged alert counter
-   
-4. **Alert Log:** Persistent alert storage (3 pts)
-   - Alert database table
-   - Alert correlation with outages
-   
+
 5. **Testing:** Alert system tests (3 pts)
    - Threshold trigger tests
    - Alert state machine tests
 
 **Sprint 5 Deliverable:** Application generates alerts when devices exceed thresholds; users can configure custom alert rules.
 
-**KSBs Addressed:** S5, S6, S13, B6, B8
+**KSBs Addressed:** S1, S2, S3, S4, S5, S6, S10, S13, S17, B6, B8
 
 ---
 

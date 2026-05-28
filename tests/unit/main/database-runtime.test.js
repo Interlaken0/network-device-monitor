@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 describe('Database Runtime Behavior Tests', () => {
-  const databasePath = path.join(__dirname, '../../src/main/database.js')
+  const databasePath = path.join(__dirname, '../../../src/main/db/database.js')
 
   describe('Method Existence and Signatures', () => {
     it('database.js exists', () => {
@@ -210,7 +210,7 @@ describe('Database Runtime Behavior Tests', () => {
   })
 
   describe('IPC Handler Runtime Behavior', () => {
-    const ipcPath = path.join(__dirname, '../../src/main/ipc-handlers.js')
+    const ipcPath = path.join(__dirname, '../../../src/main/ipc/handlers.js')
 
     it('ipc-handlers.js exists', () => {
       expect(fs.existsSync(ipcPath)).toBe(true)

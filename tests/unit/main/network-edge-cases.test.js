@@ -14,8 +14,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 describe('Network Edge Cases', () => {
-  const pingServicePath = path.join(__dirname, '../../src/main/ping-service.js')
-  const networkMonitorPath = path.join(__dirname, '../../src/main/network-monitor.js')
+  const pingServicePath = path.join(__dirname, '../../../src/main/services/ping-service.js')
+  const networkMonitorPath = path.join(__dirname, '../../../src/main/services/network-monitor.js')
 
   describe('File Existence', () => {
     it('ping-service.js exists', () => {
@@ -260,7 +260,7 @@ describe('IP Validation Edge Cases', () => {
 })
 
 describe('Monitoring Lifecycle Edge Cases', () => {
-  const networkMonitorPath = path.join(__dirname, '../../src/main/network-monitor.js')
+  const networkMonitorPath = path.join(__dirname, '../../../src/main/services/network-monitor.js')
 
   it('monitorAllDevices handles individual device start failures', () => {
     const content = fs.readFileSync(networkMonitorPath, 'utf-8')

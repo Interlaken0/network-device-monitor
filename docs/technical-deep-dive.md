@@ -541,7 +541,7 @@ app.on('before-quit', () => {
 ```javascript
 // __tests__/database.test.js
 import Database from 'better-sqlite3';
-import { initialiseSchema } from '../src/main/database';
+import { initialiseSchema } from '../src/main/db/database';
 
 describe('Database Layer', () => {
   let db;
@@ -594,7 +594,7 @@ describe('Database Layer', () => {
 ```javascript
 // __tests__/ipc-handlers.test.js
 import { ipcMain } from 'electron';
-import { registerIPCHandlers } from '../src/main/ipc-handlers';
+import { registerIPCHandlers } from '../src/main/ipc/handlers';
 
 describe('IPC Handlers', () => {
   beforeAll(() => {
@@ -675,7 +675,7 @@ module.exports = {
       lines: 80,
       statements: 80
     },
-    './src/main/database.js': {
+    './src/main/db/database.js': {
       branches: 90,
       functions: 90,
       lines: 90,
