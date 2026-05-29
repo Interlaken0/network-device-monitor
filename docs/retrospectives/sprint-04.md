@@ -15,7 +15,7 @@
 - **Security hardening** was implemented proactively rather than reactively. Rate limiting, input sanitisation, and path traversal checks on the export pipeline mean the tool is safe for production use.
 
 ### Testing & Quality
-- **403 tests passing** across 15 test suites. New test coverage for Sprint 4 includes 16 security utility tests and 11 component logic tests.
+- **451+ tests passing** across 16 test suites. New test coverage for Sprint 4 includes security utility tests and component logic tests.
 - **Lint and typecheck clean** — no warnings or errors in the codebase.
 - **Branching strategy worked** — separating Week 1 (core components) and Week 2 (advanced features + security) into distinct branches made code review manageable. Week 1 merged cleanly via PR #16.
 

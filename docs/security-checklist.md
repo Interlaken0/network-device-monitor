@@ -45,7 +45,7 @@ const mainWindow = new BrowserWindow({
     nodeIntegration: false,    // ✅ Must be false
     contextIsolation: true,      // ✅ Must be true
     sandbox: true,               // ✅ Should be true
-    preload: path.join(__dirname, 'preload.js')
+    preload: path.join(__dirname, '../preload/index.cjs')
   }
 });
 ```
@@ -64,15 +64,24 @@ const mainWindow = new BrowserWindow({
 
 **Code Verification:**
 ```javascript
-// preload.js - Check for this pattern:
-const VALID_CHANNELS = ['device:create', 'device:read', 'ping:start'];
+// preload.js - Check for this pattern (src/preload/index.js):
+const VALID_CHANNELS = [
+  'device:create', 'device:read', 'device:update', 'device:delete',
+  'ping:start', 'ping:stop', 'ping:result',
+  // ... full whitelist
+];
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  invoke: (channel, ...args) => {
-    if (!VALID_CHANNELS.includes(channel)) {
-      throw new Error(`Invalid channel: ${channel}`);
-    }
-    return ipcRenderer.invoke(channel, ...args);
+  // Named methods (not generic invoke wrapper)
+  createDevice: (deviceData) => ipcRenderer.invoke('device:create', deviceData),
+  getDevices: (id) => ipcRenderer.invoke('device:read', id),
+  startPing: (deviceId, ipAddress, intervalMs) =>
+    ipcRenderer.invoke('ping:start', deviceId, ipAddress, intervalMs),
+  stopPing: (deviceId) => ipcRenderer.invoke('ping:stop', deviceId),
+  onPingResult: (callback) => {
+    const wrappedCallback = (event, ...args) => callback(...args)
+    ipcRenderer.on('ping:result', wrappedCallback)
+    return () => { ipcRenderer.removeListener('ping:result', wrappedCallback) }
   }
 });
 ```
