@@ -1235,6 +1235,44 @@ class DatabaseManager {
     return { resolvedCount: result.changes, deviceId }
   }
 
+  /**
+   * Check whether a device has an active (unresolved) alert of a given type.
+   * Used by the alert engine for deduplication.
+   *
+   * @param {number} deviceId - Device ID
+   * @param {string} alertType - Alert type key
+   * @returns {boolean}
+   */
+  hasActiveAlertOfType(deviceId, alertType) {
+    const stmt = this.getStatement(
+      'hasActiveAlertOfType',
+      `SELECT COUNT(*) as count FROM alerts
+       WHERE device_id = ? AND alert_type = ? AND status IN ('triggered', 'unacknowledged', 'acknowledged')`
+    )
+
+    const result = stmt.get(deviceId, alertType)
+    return result.count > 0
+  }
+
+  /**
+   * Resolve all active alerts of a specific type for a device.
+   *
+   * @param {number} deviceId - Device ID
+   * @param {string} alertType - Alert type to resolve
+   * @returns {Object} Result with count of resolved alerts
+   */
+  resolveDeviceAlertsByType(deviceId, alertType) {
+    const stmt = this.getStatement(
+      'resolveDeviceAlertsByType',
+      `UPDATE alerts
+       SET status = 'resolved', resolved_at = datetime('now')
+       WHERE device_id = ? AND alert_type = ? AND status IN ('triggered', 'unacknowledged', 'acknowledged')`
+    )
+
+    const result = stmt.run(deviceId, alertType)
+    return { resolvedCount: result.changes, deviceId, alertType }
+  }
+
   // ========== Utility Methods ==========
 
   /**

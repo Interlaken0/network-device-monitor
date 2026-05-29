@@ -12,10 +12,10 @@
 Per-device threshold settings (latency, failures, packet loss) with severity levels and enable/disable toggle.
 
 **Tasks:**
-- [ ] Create `alerts` database table
-- [ ] Build `AlertConfiguration.jsx` with threshold inputs
-- [ ] Add form validation
-- [ ] Persist settings to SQLite
+- [x] Create `alerts` database table
+- [x] Build `AlertConfiguration.jsx` with threshold inputs
+- [x] Add form validation
+- [x] Persist settings to SQLite
 
 **Acceptance Criteria:**
 - Thresholds configurable per device
@@ -30,10 +30,10 @@ Per-device threshold settings (latency, failures, packet loss) with severity lev
 Monitor device metrics against thresholds and generate alerts with deduplication.
 
 **Tasks:**
-- [ ] Implement threshold checking in `network-monitor.js`
-- [ ] Add alert state machine (triggered → unacknowledged → acknowledged → resolved)
-- [ ] Add alert deduplication
-- [ ] Create alert generation IPC handler
+- [x] Implement threshold checking in `network-monitor.js`
+- [x] Add alert state machine (triggered → unacknowledged → acknowledged → resolved)
+- [x] Add alert deduplication
+- [x] Create alert generation IPC handler
 
 **Acceptance Criteria:**
 - Alerts generated on threshold breach
@@ -48,9 +48,9 @@ Monitor device metrics against thresholds and generate alerts with deduplication
 Persist alerts to database with status tracking.
 
 **Tasks:**
-- [ ] Create `alerts` table with indexes
-- [ ] Implement alert CRUD in `db/database.js`
-- [ ] Add alert query IPC handlers
+- [x] Create `alerts` table with indexes
+- [x] Implement alert CRUD in `db/database.js`
+- [x] Add alert query IPC handlers
 
 **Acceptance Criteria:**
 - Alerts persisted with metadata
@@ -61,8 +61,18 @@ Persist alerts to database with status tracking.
 
 ---
 
+## Implementation Notes
+
+- **`AlertEngine`** (`src/main/services/alert-engine.js`) centralises threshold evaluation. It loads per-device alert configurations from `alert_configurations`, compares live ping metrics against thresholds, and creates alerts via `db.createAlert`.
+- **Deduplication** is handled by `db.hasActiveAlertOfType` — the engine checks whether an unresolved alert of the same type already exists before creating a new one.
+- **Auto-resolution** happens when a metric returns to normal (e.g. latency drops below threshold), calling `db.resolveDeviceAlertsByType`.
+- **State tracking** is per-device and in-memory; the engine clears state when `NetworkMonitor` stops monitoring a device.
+- **Alert generation IPC handlers** (`alert:create`, `alert:get`, `alert:getByDevice`, `alert:acknowledge`, `alert:resolve`) were already in place and required no changes.
+
+---
+
 ## Definition of Done
-- [ ] All stories implemented
-- [ ] Unit tests passing (≥80% coverage)
-- [ ] Security review completed
-- [ ] Code committed
+- [x] All stories implemented
+- [x] Unit tests passing (≥80% coverage on new code)
+- [x] Security review completed
+- [x] Code committed
