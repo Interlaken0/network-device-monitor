@@ -9,7 +9,7 @@ The project required a test runner for unit and integration tests that could sup
 Key requirements:
 - Stable support for Jest-style test suites already used in earlier sprints
 - Compatibility with the current Electron renderer/main/preload structure
-- Existing integration with Babel and JSDOM for component tests
+- React Testing Library dependencies available for future component test migration
 - Predictable command-line scripts for CI and local development
 - Flexible enough to support future iteration on test strategy
 
@@ -29,7 +29,7 @@ Selected **Jest** as the test runner for the current project.
 
 ### Negative
 - **Slower test startup than Vitest** — Jest is generally slower for repeated developer feedback loops.
-- **More configuration overhead** — Requires explicit Babel/JSX handling and module interop compared to Vitest's modern defaults.
+- **More configuration overhead** — ESM/CJS interop requires `--experimental-vm-modules` and careful mock setup compared to Vitest's native Vite integration.
 - **Potential future migration** — If the project later prioritises faster iteration, a switch to Vitest may still be desirable.
 
 ## Alternatives Considered

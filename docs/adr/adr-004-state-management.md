@@ -10,7 +10,9 @@ The network device monitor requires state management for:
 - Monitoring status (which devices are actively being pinged)
 - UI state (editing modes, modal visibility, form data)
 
-The application runs in Electron with React in the renderer process. State synchronises between main process (database, ping service), renderer process (React UI), and IPC layer. Zustand replaced React useState as the application grew beyond simple prop drilling.
+The application runs in Electron with React in the renderer process. State synchronises between main process (database, ping service), renderer process (React UI), and IPC layer. As the dashboard grew in Sprint 3, prop drilling became unwieldy for sharing ping results and outage state across multiple components.
+
+The evaluation occurred during Sprint 2 Week 2 (23rd-29th April 2026) in preparation for Sprint 3 dashboard visualisation, when the team projected that device cards, latency charts, and outage timelines would need shared state.
 
 ## Decision
 Selected **Zustand 5.0.12** for client-side state management.
@@ -82,7 +84,8 @@ Two Zustand stores manage application state in `src/renderer/stores/`:
 
 ---
 
-**Decision Date:** 15th April 2026  
+**Decision Date:** 29th April 2026  
 **Decided By:** Development Team  
 **Last Updated:** 6th May 2026  
+**Implementation Complete:** Sprint 3 (29th April - 13th May 2026)  
 **Verified:** Zustand ^5.0.12 in package.json dependencies; stores fully implemented with deviceStore.js and themeStore.js; App.jsx uses Zustand hooks exclusively

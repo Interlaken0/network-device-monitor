@@ -72,7 +72,7 @@ Production builds:
 2. `npm run make` — Electron Forge creates distributable from Vite output
 
 Native module handling:
-- better-sqlite3 and ping marked as `external` in Vite config (not bundled)
+- `externalizeDepsPlugin()` from electron-vite automatically excludes native modules (better-sqlite3, ping) from bundling
 - electron-rebuild compiles native modules for target Electron version
 
 ## References

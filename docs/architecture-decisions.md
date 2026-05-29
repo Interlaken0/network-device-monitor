@@ -334,7 +334,7 @@ Options considered:
 
 **Provisional: Jest 29.x**
 
-**Revisit:** Sprint 1 if Vite integration proves problematic
+**Revisit:** After test architecture solidifies (post-Sprint 3)
 
 ### Consequences
 
@@ -351,8 +351,8 @@ Options considered:
 
 ### Mitigations
 
-- Vitest investigation in Sprint 1 spike
-- Parallel configuration possible
+- Vitest initially reviewed in Sprint 1; formal provisional decision made after Sprint 3 testing maturity
+- Parallel configuration possible if migration is desired
 - Focus on test patterns over framework
 
 ### KSB Evidence
@@ -438,7 +438,7 @@ Options considered:
 
 **Rationale:**
 - node-net-ping requires admin on Windows
-- ping (npm) provides sufficient accuracy for monitoring
+- ping (npm) provides sufficient accuracy for monitoring — see ADR-009 for the accepted alternative
 - Raw sockets add security review complexity
 - No significant performance benefit for 5-second intervals
 
@@ -456,6 +456,7 @@ Options considered:
 | 006 | Vite over Webpack | ✅ Accepted | Apr 2026 | S10, K7, B8 |
 | 007 | Jest over Vitest | ⚠️ Provisional | Apr 2026 | S4, S13, K12 |
 | 008 | GitHub Flow over GitFlow | ✅ Accepted | Apr 2026 | S14, B1 |
+| 009 | ping (npm) over raw ICMP | ✅ Accepted | Apr 2026 | S1, S17, B8 |
 
 ---
 

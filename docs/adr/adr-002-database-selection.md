@@ -40,6 +40,7 @@ Selected **better-sqlite3 12.x** with synchronous API for all database operation
 
 ## Related Decisions
 - ADR-001: Electron framework selection (better-sqlite3 runs in Electron main process)
+- ADR-009: Ping Library Selection (ping results recorded via `db.recordPing()`)
 - Singleton DatabaseManager pattern for prepared statement caching
 - Separate sqlite3 (prebuilt) for test databases vs better-sqlite3 for production
 
@@ -48,7 +49,7 @@ Selected **better-sqlite3 12.x** with synchronous API for all database operation
 DatabaseManager implemented as singleton with:
 - **Lazy initialisation** — Database created on first access, not import
 - **Prepared statement cache** — Common queries compiled once, executed many times
-- **Schema versioning** — Migrations handled via `PRAGMA user_version`
+- **Schema migrations** — `runMigrations()` detects legacy schema via `sqlite_autoindex_devices_1` and recreates tables with updated constraints
 - **Foreign key constraints** — `PRAGMA foreign_keys = ON` for referential integrity
 
 Schema design:
