@@ -11,9 +11,9 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
-import { useDeviceStore } from '../stores/deviceStore'
-import { useThemeStore } from '../stores/themeStore'
-import { getChartColours } from '../utils/chart-theme'
+import { useDeviceStore } from '../../stores/deviceStore'
+import { useThemeStore } from '../../stores/themeStore'
+import { getChartColours } from '../../utils/chart-theme'
 
 /**
  * Time range options for outage timeline filtering.

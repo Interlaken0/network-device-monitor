@@ -9,8 +9,8 @@ import {
   selectDevices, 
   selectIsMonitoring, 
   selectActiveOutage
-} from '../stores/deviceStore'
-import { calculateStatusFromLatency } from '../utils/status'
+} from '../../stores/deviceStore'
+import { calculateStatusFromLatency } from '../../utils/status'
 
 /**
  * Dashboard displays a grid of device status cards.

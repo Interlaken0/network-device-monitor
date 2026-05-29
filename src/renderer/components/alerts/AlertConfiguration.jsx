@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useDeviceStore } from '../stores/deviceStore'
+import { useDeviceStore } from '../../stores/deviceStore'
 
 /**
  * Validation rules for alert threshold inputs.
