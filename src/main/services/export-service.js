@@ -48,7 +48,7 @@ class BasicHtmlSanitiser {
     }
     
     // Remove dangerous attributes from remaining tags
-    const attributeRegex = /\s+(\w+)=["'][^"']*["']/gi
+    const attributeRegex = /\s+(\w+)=("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/gi
     sanitised = sanitised.replace(attributeRegex, (match, attrName) => {
       if (this.dangerousAttributes.has(attrName.toLowerCase())) {
         return ''
@@ -118,21 +118,8 @@ class ExportService {
         data = db.getOutagesForExport(query.deviceId, query.startDate, query.endDate)
       }
       
-      // Sanitise all string fields
-      const sanitisedData = data.map(row => {
-        const sanitisedRow = {}
-        for (const [key, value] of Object.entries(row)) {
-          if (typeof value === 'string') {
-            sanitisedRow[key] = BasicHtmlSanitiser.escapeHtml(value)
-          } else {
-            sanitisedRow[key] = value
-          }
-        }
-        return sanitisedRow
-      })
-      
-      // Generate CSV with proper escaping
-      return this._generateCSVContent(sanitisedData, columns)
+      // Generate CSV with proper escaping (no HTML sanitisation — CSV is not HTML)
+      return this._generateCSVContent(data, columns)
       
     } catch (error) {
       console.error('Error generating CSV export:', error)

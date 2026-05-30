@@ -230,7 +230,7 @@ export async function registerDatabaseHandlers() {
   }))
   
   ipcMain.handle('ping:status', wrapHandler('getting ping status', async (event, deviceId) => {
-    if (deviceId) {
+    if (deviceId != null) {
       const status = networkMonitor.getDeviceStatus(deviceId)
       return { success: true, data: status }
     } else {
@@ -392,7 +392,7 @@ export async function registerDatabaseHandlers() {
   // ========== Outage Handlers ==========
   
   ipcMain.handle('outage:getActive', wrapHandler('getting active outages', async (event, deviceId) => {
-    if (deviceId) {
+    if (deviceId != null) {
       // Get active outage for specific device
       const outage = db.getActiveOutage(deviceId)
       return { success: true, data: transformOutage(outage) }
@@ -412,7 +412,7 @@ export async function registerDatabaseHandlers() {
 
   ipcMain.handle('outage:getHistory', wrapHandler('getting outage history', async (event, deviceId, hours = 24) => {
     let outages
-    if (deviceId) {
+    if (deviceId != null) {
       // Get outage history for specific device
       const stmt = db.getStatement('getOutageHistory',
         `SELECT o.*, d.name, d.ip_address

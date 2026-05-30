@@ -53,10 +53,6 @@ class NetworkMonitor {
     this.services.set(deviceId, service)
 
     console.log(`Started monitoring device ${deviceId} (${ipAddress})`)
-    
-    if (this.onDeviceStatusChange) {
-      this.onDeviceStatusChange(deviceId, { status: 'online', ipAddress })
-    }
 
     return true
   }
@@ -167,7 +163,11 @@ class NetworkMonitor {
    */
   async _handlePingResult(deviceId, pingData) {
     // Sprint 5: Evaluate alert thresholds against live metrics
-    await this.alertEngine.processPingResult(deviceId, pingData)
+    try {
+      await this.alertEngine.processPingResult(deviceId, pingData)
+    } catch (alertErr) {
+      console.error(`AlertEngine error for device ${deviceId}:`, alertErr.message)
+    }
 
     // Update aggregate status if callback set
     if (this.onAggregateStatus) {
@@ -188,10 +188,14 @@ class NetworkMonitor {
     // Broadcast to renderer process
     const windows = BrowserWindow.getAllWindows()
     windows.forEach(win => {
-      win.webContents.send('ping:result', {
-        deviceId,
-        ...pingData
-      })
+      try {
+        win.webContents.send('ping:result', {
+          deviceId,
+          ...pingData
+        })
+      } catch (broadcastErr) {
+        // Window closed during iteration — safe to ignore
+      }
     })
   }
 

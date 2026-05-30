@@ -67,7 +67,7 @@ describe('generateCSV', () => {
     expect(result).toContain('Router-1,192.168.1.1,router')
   })
 
-  it('sanitises string values in CSV output', async () => {
+  it('preserves raw string values in CSV output (no HTML escaping)', async () => {
     mockDb.getAllDevices.mockReturnValueOnce([
       { name: '<script>alert(1)</script>', ip_address: '10.0.0.1', device_type: 'server', location: '', is_active: 1 }
     ])
@@ -75,8 +75,9 @@ describe('generateCSV', () => {
       { type: 'devices' },
       ['name', 'ip_address']
     )
-    expect(result).not.toContain('<script>')
-    expect(result).toContain('&lt;script&gt;')
+    // CSV is not HTML — raw values should be preserved; HTML escaping is only for HTML reports
+    expect(result).toContain('<script>alert(1)</script>')
+    expect(result).not.toContain('&lt;script&gt;')
   })
 })
 
