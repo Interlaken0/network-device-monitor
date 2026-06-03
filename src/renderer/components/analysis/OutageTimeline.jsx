@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { shallow } from 'zustand/shallow'
 import {
@@ -11,9 +11,9 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
-import { useDeviceStore } from '../stores/deviceStore'
-import { useThemeStore } from '../stores/themeStore'
-import { getChartColours } from '../utils/chart-theme'
+import { useDeviceStore } from '../../stores/deviceStore'
+import { useThemeStore } from '../../stores/themeStore'
+import { getChartColours } from '../../utils/chart-theme'
 
 /**
  * Time range options for outage timeline filtering.
@@ -137,6 +137,13 @@ OutageTooltip.propTypes = {
 function OutageTimeline({ deviceId = null, deviceName = null, showTitle = true }) {
   const [timeRange, setTimeRange] = useState('24hr')
   const [severityFilter, setSeverityFilter] = useState('all')
+  const [now, setNow] = useState(Date.now())
+
+  // Tick every minute so ongoing outage durations update live
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60000)
+    return () => clearInterval(timer)
+  }, [])
 
   // Get current theme for chart colours
   const theme = useThemeStore((state) => state.theme)
@@ -150,7 +157,6 @@ function OutageTimeline({ deviceId = null, deviceName = null, showTitle = true }
 
   // Filter and format outage data for timeline
   const timelineData = useMemo(() => {
-    const now = Date.now()
     const cutoff = now - (TIME_RANGES[timeRange]?.ms || TIME_RANGES['24hr'].ms)
 
     let filtered = outageHistory.filter((outage) => {
@@ -176,7 +182,7 @@ function OutageTimeline({ deviceId = null, deviceName = null, showTitle = true }
       severity: outage.severity,
       startTime: outage.startTime,
       endTime: outage.endTime,
-      durationSeconds: outage.durationSeconds || Math.floor((Date.now() - new Date(outage.startTime).getTime()) / 1000),
+      durationSeconds: outage.durationSeconds || Math.floor((now - new Date(outage.startTime).getTime()) / 1000),
       time: formatTimelineTime(outage.startTime, timeRange),
       displayDate: new Date(outage.startTime).toLocaleDateString('en-GB', {
         day: 'numeric',
@@ -187,7 +193,7 @@ function OutageTimeline({ deviceId = null, deviceName = null, showTitle = true }
       }),
       timestamp: new Date(outage.startTime).getTime()
     })).sort((a, b) => a.timestamp - b.timestamp)
-  }, [outageHistory, deviceId, timeRange, severityFilter])
+  }, [outageHistory, deviceId, timeRange, severityFilter, now])
 
   // Calculate statistics
   const stats = useMemo(() => {

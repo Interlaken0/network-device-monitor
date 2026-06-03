@@ -11,10 +11,10 @@ import {
   Cell
 } from 'recharts'
 import QueryBuilder from './QueryBuilder'
-import SummaryCards from './SummaryCards'
-import { useDeviceStore } from '../stores/deviceStore'
-import { useThemeStore } from '../stores/themeStore'
-import { getChartColours } from '../utils/chart-theme'
+import SummaryCards from '../dashboard/SummaryCards'
+import { useDeviceStore } from '../../stores/deviceStore'
+import { useThemeStore } from '../../stores/themeStore'
+import { getChartColours } from '../../utils/chart-theme'
 
 /**
  * Custom tooltip for the latency bar chart.

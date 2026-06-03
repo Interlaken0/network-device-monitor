@@ -1,16 +1,16 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { shallow } from 'zustand/shallow'
-import DeviceStatusCard from './DeviceStatusCard'
+import DeviceStatusCard from '../devices/DeviceStatusCard'
 import LatencyChart from './LatencyChart'
-import OutageTimeline from './OutageTimeline'
+import OutageTimeline from '../analysis/OutageTimeline'
 import { 
   useDeviceStore, 
   selectDevices, 
   selectIsMonitoring, 
   selectActiveOutage
-} from '../stores/deviceStore'
-import { calculateStatusFromLatency } from '../utils/status'
+} from '../../stores/deviceStore'
+import { calculateStatusFromLatency } from '../../utils/status'
 
 /**
  * Dashboard displays a grid of device status cards.

@@ -16,18 +16,18 @@ Sprint 3 delivered the first real dashboard experience for the app, adding statu
 ### Key Deliverables
 
 1. **Device Dashboard with status cards**
-   - Implemented `src/renderer/components/Dashboard.jsx` as the central overview.
+   - Implemented `src/renderer/components/dashboard/Dashboard.jsx` as the central overview.
    - Each device card uses `DeviceCardWrapper` and a `DeviceStatusCard` to show current latency, online state, and outage badges.
    - Cards are keyboard-accessible and click-to-expand a latency chart only for monitored devices.
 
 2. **Latency chart visualisation**
-   - Added `src/renderer/components/LatencyChart.jsx` for device-specific latency history.
+   - Added `src/renderer/components/dashboard/LatencyChart.jsx` for device-specific latency history.
    - Chart display is triggered from the dashboard and works with monitored devices only.
    - `src/renderer/stores/deviceStore.js` now captures `pingHistory` in addition to latest ping results.
 
 3. **Outage detection UI integration**
-   - Added active outage tracking and outage history support via `src/main/ipc-handlers.js` and `src/main/database.js`.
-   - Implemented `src/renderer/components/OutageTimeline.jsx` to display historical outage information and severity filtering.
+   - Added active outage tracking and outage history support via `src/main/ipc/handlers.js` and `src/main/db/database.js`.
+   - Implemented `src/renderer/components/analysis/OutageTimeline.jsx` to display historical outage information and severity filtering.
    - The dashboard now includes an outage history panel with 30-day data pulled from the database through the renderer store.
 
 4. **Theme system polish**
@@ -36,8 +36,8 @@ Sprint 3 delivered the first real dashboard experience for the app, adding statu
    - UI styling in `src/renderer/App.css` now includes smooth theme transitions and dark mode-specific styles.
 
 5. **Database and IPC improvements**
-   - Added `device:getStatusSummary`, `outage:getActive`, `outage:getHistory`, and `outage:configureThresholds` handlers in `src/main/ipc-handlers.js`.
-   - Extended `src/main/database.js` with status summary queries, outage aggregation, active outage lookups, and outage history.
+   - Added `device:getStatusSummary`, `outage:getActive`, `outage:getHistory`, and `outage:configureThresholds` handlers in `src/main/ipc/handlers.js`.
+   - Extended `src/main/db/database.js` with status summary queries, outage aggregation, active outage lookups, and outage history.
    - The renderer store loads outage history on Dashboard mount and keeps it available for the timeline.
 
 6. **Security audit remediation**
@@ -67,8 +67,8 @@ Using selector functions and `shallow` comparisons in `Dashboard.jsx` kept re-re
 ### Outage event flow
 
 Outage data flows from the database into IPC and then into the renderer store. This keeps the UI decoupled from main process details:
-1. Main process query in `src/main/database.js`
-2. IPC handler in `src/main/ipc-handlers.js`
+1. Main process query in `src/main/db/database.js`
+2. IPC handler in `src/main/ipc/handlers.js`
 3. `loadOutageHistory()` in `src/renderer/stores/deviceStore.js`
 4. `OutageTimeline.jsx` renders the history
 
@@ -93,15 +93,15 @@ The theme store stores the user's selection in local storage and optionally foll
 
 ## Where the Code Lives
 
-- `src/renderer/components/Dashboard.jsx` — Dashboard overview and device selection
-- `src/renderer/components/DeviceStatusCard.jsx` — Device status cards, latency badges, outage indicator
-- `src/renderer/components/LatencyChart.jsx` — Device latency history chart
-- `src/renderer/components/OutageTimeline.jsx` — Outage history visualisation and list
+- `src/renderer/components/dashboard/Dashboard.jsx` — Dashboard overview and device selection
+- `src/renderer/components/devices/DeviceStatusCard.jsx` — Device status cards, latency badges, outage indicator
+- `src/renderer/components/dashboard/LatencyChart.jsx` — Device latency history chart
+- `src/renderer/components/analysis/OutageTimeline.jsx` — Outage history visualisation and list
 - `src/renderer/stores/deviceStore.js` — Shared state for devices, ping results, monitoring, and outages
 - `src/renderer/stores/themeStore.js` — Dark/light theme persistence and system fallback
 - `src/renderer/utils/status.js` — Latency status classification logic
-- `src/main/ipc-handlers.js` — Outage and status summary IPC handlers
-- `src/main/database.js` — Outage queries, status summary, and aggregation logic
+- `src/main/ipc/handlers.js` — Outage and status summary IPC handlers
+- `src/main/db/database.js` — Outage queries, status summary, and aggregation logic
 - `src/renderer/App.jsx` — Theme initialization, dashboard wrapper, and device form integration
 
 ## Commits This Sprint

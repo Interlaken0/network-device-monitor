@@ -40,6 +40,7 @@ Selected **Electron 28.x with Vite integration** as the desktop framework.
 
 ## Related Decisions
 - ADR-002: better-sqlite3 for synchronous database access (complements Electron's main process architecture)
+- ADR-009: Ping Library Selection (native Node.js module execution in main process)
 - Security hardening via context isolation (see `src/preload/index.js`)
 - Vite for build tooling (fast HMR during development, optimised production builds)
 

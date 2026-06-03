@@ -95,20 +95,37 @@ A feature is Done only when:
 ### 4.2 Security Architecture (Inherited from Temperature Plotter)
 
 ```javascript
-// Main Process Security
-{
-  nodeIntegration: false,    // No direct Node.js access
-  sandbox: true,             // Process isolation
-  contextIsolation: true,    // Secure IPC bridge
-  preload: path.join(__dirname, 'preload.js')
+// Main Process Security (src/main/index.js:32-40)
+webPreferences: {
+  nodeIntegration: false,    // Security: Disable Node.js integration
+  contextIsolation: true,  // Security: Enable context isolation
+  sandbox: true,           // Security: Enable sandbox
+  preload: path.join(__dirname, '../preload/index.cjs'),
+  allowRunningInsecureContent: false,
+  experimentalFeatures: false,
+  enableBlinkFeatures: ''
 }
 
-// Preload.js - Secure Context Bridge
-contextBridge.exposeInMainWorld('networkAPI', {
-  startMonitoring: (ip) => ipcRenderer.invoke('network:start', ip),
-  stopMonitoring: () => ipcRenderer.invoke('network:stop'),
-  onPingResult: (callback) => ipcRenderer.on('network:result', callback)
-});
+// Preload.js - Secure Context Bridge (src/preload/index.js:63-139)
+contextBridge.exposeInMainWorld('electronAPI', {
+  // Device management
+  createDevice: (deviceData) => ipcRenderer.invoke('device:create', deviceData),
+  getDevices: (id) => ipcRenderer.invoke('device:read', id),
+  updateDevice: (id, updates) => ipcRenderer.invoke('device:update', id, updates),
+  deleteDevice: (id) => ipcRenderer.invoke('device:delete', id),
+  
+  // Ping monitoring
+  startPing: (deviceId, ipAddress, intervalMs) => 
+    ipcRenderer.invoke('ping:start', deviceId, ipAddress, intervalMs),
+  stopPing: (deviceId) => ipcRenderer.invoke('ping:stop', deviceId),
+  
+  // Event listeners
+  onPingResult: (callback) => {
+    const wrappedCallback = (event, ...args) => callback(...args)
+    ipcRenderer.on('ping:result', wrappedCallback)
+    return () => { ipcRenderer.removeListener('ping:result', wrappedCallback) }
+  }
+})
 ```
 
 ### 4.3 Database Schema Design
@@ -118,7 +135,7 @@ contextBridge.exposeInMainWorld('networkAPI', {
 CREATE TABLE devices (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    ip_address TEXT UNIQUE NOT NULL,
+    ip_address TEXT NOT NULL,
     device_type TEXT CHECK(device_type IN ('server', 'router', 'printer', 'switch')),
     location TEXT,
     is_active BOOLEAN DEFAULT 1,
@@ -147,6 +164,9 @@ CREATE TABLE outages (
     FOREIGN KEY(device_id) REFERENCES devices(id) ON DELETE CASCADE
 );
 
+-- Partial unique index: only active devices must have unique IPs
+CREATE UNIQUE INDEX idx_devices_ip_active ON devices(ip_address) WHERE is_active = 1;
+
 -- indexes: Query optimisation
 CREATE INDEX idx_ping_logs_device_time ON ping_logs(device_id, timestamp);
 CREATE INDEX idx_ping_logs_timestamp ON ping_logs(timestamp);
@@ -157,17 +177,53 @@ CREATE INDEX idx_outages_device ON outages(device_id);
 
 **Singleton Database Connection:**
 ```javascript
-// database.js - Single persistent connection
-const Database = require('better-sqlite3');
-let dbInstance = null;
-
-function getDatabase() {
-  if (!dbInstance) {
-    const dbPath = path.join(app.getPath('userData'), 'network-monitor.sqlite');
-    dbInstance = new Database(dbPath);
-    initialiseSchema(dbInstance);
+// database.js - Singleton with lazy-loaded ESM (src/main/db/database.js)
+// Lazy-loaded better-sqlite3 (native module, must not be bundled)
+let Database = null
+async function getDatabaseClass() {
+  if (!Database) {
+    const module = await import('better-sqlite3')
+    Database = module.default
   }
-  return dbInstance;
+  return Database
+}
+
+class DatabaseManager {
+  static instance = null
+  db = null
+  statements = new Map()
+  
+  static getInstance() {
+    if (!DatabaseManager.instance) {
+      DatabaseManager.instance = new DatabaseManager()
+    }
+    return DatabaseManager.instance
+  }
+  
+  async initialise() {
+    if (this.db) return
+    const DatabaseClass = await getDatabaseClass()
+    const dbPath = path.join(app.getPath('userData'), 'network-monitor.sqlite')
+    this.db = new DatabaseClass(dbPath)
+    this.db.pragma('journal_mode = WAL')
+    this.db.pragma('foreign_keys = ON')
+    this.initialiseSchema()
+    this.runMigrations()
+  }
+  
+  // Prepared statement caching
+  getStatement(name, sql) {
+    if (!this.statements.has(name)) {
+      this.statements.set(name, this.db.prepare(sql))
+    }
+    return this.statements.get(name)
+  }
+}
+
+export async function getDatabase() {
+  const manager = DatabaseManager.getInstance()
+  await manager.initialise()
+  return manager
 }
 ```
 
@@ -312,33 +368,34 @@ removeListener: (channel, callback) => {
 ### Sprint 5: Alerting & Notifications (Weeks 9-10)
 **Goal:** Proactive alerting for network issues
 
-**User Stories:**
+**Week 1 (28th May – 3rd June): Alerting Foundation — 11 pts**
 1. **Alert Configuration:** Customisable thresholds (3 pts)
    - Latency threshold per device
    - Consecutive failure count
    - Alert severity levels
-   
+
 2. **Alert Engine:** Real-time alert generation (5 pts)
    - Threshold monitoring
    - Alert state management
    - Alert deduplication
-   
-3. **Visual Alerts:** UI notification system (3 pts)
+
+3. **Alert Log:** Persistent alert storage (3 pts)
+   - Alert database table
+   - Alert correlation with outages
+
+**Week 2 (4th June – 10th June): Alerting UI & Testing — 6 pts**
+4. **Visual Alerts:** UI notification system (3 pts)
    - Toast notifications
    - Alert history log
    - Unacknowledged alert counter
-   
-4. **Alert Log:** Persistent alert storage (3 pts)
-   - Alert database table
-   - Alert correlation with outages
-   
+
 5. **Testing:** Alert system tests (3 pts)
    - Threshold trigger tests
    - Alert state machine tests
 
 **Sprint 5 Deliverable:** Application generates alerts when devices exceed thresholds; users can configure custom alert rules.
 
-**KSBs Addressed:** S5, S6, S13, B6, B8
+**KSBs Addressed:** S1, S2, S3, S4, S5, S6, S10, S13, S17, B6, B8
 
 ---
 

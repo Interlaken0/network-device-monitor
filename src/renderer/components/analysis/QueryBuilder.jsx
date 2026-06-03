@@ -33,7 +33,7 @@ const AGGREGATION_TYPES = [
  * @param {boolean} props.isLoading - Whether query is in progress
  * @returns {JSX.Element}
  */
-function QueryBuilder({ filters, devices, onChange, onSubmit, isLoading }) {
+function QueryBuilder({ filters, devices, onChange, onSubmit, isLoading = false }) {
   const { dateRange, selectedDevices, aggregationType } = filters
 
   const handleDateChange = (field, value) => {
@@ -185,10 +185,6 @@ QueryBuilder.propTypes = {
   onChange: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   isLoading: PropTypes.bool
-}
-
-QueryBuilder.defaultProps = {
-  isLoading: false
 }
 
 export default QueryBuilder

@@ -12,9 +12,9 @@ import {
   YAxis,
   CartesianGrid
 } from 'recharts'
-import { useDeviceStore } from '../stores/deviceStore'
-import { useThemeStore } from '../stores/themeStore'
-import { getChartColours } from '../utils/chart-theme'
+import { useDeviceStore } from '../../stores/deviceStore'
+import { useThemeStore } from '../../stores/themeStore'
+import { getChartColours } from '../../utils/chart-theme'
 
 /**
  * Severity colour mapping for outage charts.

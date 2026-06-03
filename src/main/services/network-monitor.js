@@ -1,5 +1,6 @@
 import PingService from './ping-service.js'
-import { getDatabase } from './database.js'
+import AlertEngine from './alert-engine.js'
+import { getDatabase } from '../db/database.js'
 import { BrowserWindow } from 'electron'
 
 /**
@@ -15,6 +16,7 @@ class NetworkMonitor {
   constructor() {
     /** @type {Map<number, PingService>} */
     this.services = new Map()
+    this.alertEngine = new AlertEngine()
     this.onDeviceStatusChange = null
     this.onAggregateStatus = null
   }
@@ -51,10 +53,6 @@ class NetworkMonitor {
     this.services.set(deviceId, service)
 
     console.log(`Started monitoring device ${deviceId} (${ipAddress})`)
-    
-    if (this.onDeviceStatusChange) {
-      this.onDeviceStatusChange(deviceId, { status: 'online', ipAddress })
-    }
 
     return true
   }
@@ -73,6 +71,7 @@ class NetworkMonitor {
 
     service.stop()
     this.services.delete(deviceId)
+    this.alertEngine.clearDeviceState(deviceId)
 
     console.log(`Stopped monitoring device ${deviceId}`)
     
@@ -88,15 +87,16 @@ class NetworkMonitor {
    */
   stopAll() {
     console.log(`Stopping all monitoring (${this.services.size} devices)`)
-    
+
     for (const [deviceId, service] of this.services) {
       service.stop()
-      
+      this.alertEngine.clearDeviceState(deviceId)
+
       if (this.onDeviceStatusChange) {
         this.onDeviceStatusChange(deviceId, { status: 'stopped' })
       }
     }
-    
+
     this.services.clear()
   }
 
@@ -162,6 +162,13 @@ class NetworkMonitor {
    * @param {Object} pingData - Ping result data
    */
   async _handlePingResult(deviceId, pingData) {
+    // Sprint 5: Evaluate alert thresholds against live metrics
+    try {
+      await this.alertEngine.processPingResult(deviceId, pingData)
+    } catch (alertErr) {
+      console.error(`AlertEngine error for device ${deviceId}:`, alertErr.message)
+    }
+
     // Update aggregate status if callback set
     if (this.onAggregateStatus) {
       const aggregate = await this._calculateAggregateStatus()
@@ -181,10 +188,14 @@ class NetworkMonitor {
     // Broadcast to renderer process
     const windows = BrowserWindow.getAllWindows()
     windows.forEach(win => {
-      win.webContents.send('ping:result', {
-        deviceId,
-        ...pingData
-      })
+      try {
+        win.webContents.send('ping:result', {
+          deviceId,
+          ...pingData
+        })
+      } catch (broadcastErr) {
+        // Window closed during iteration — safe to ignore
+      }
     })
   }
 

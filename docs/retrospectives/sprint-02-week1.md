@@ -64,9 +64,9 @@ The `isMonitoring` state follows the same pattern — a dictionary tracking whic
 
 ## Where the Code Lives
 
-- `src/main/ipc-handlers.js` — IPC handlers with validation layer (lines 14-29 for validators, lines 95-173 for device operations)
-- `src/main/network-monitor.js` — Multi-device monitoring coordinator using Map-based tracking (lines 14-16 for the services Map, lines 28-59 for start monitoring logic)
-- `src/main/database.js` — SQLite operations with prepared statements and foreign key constraints
+- `src/main/ipc/handlers.js` — IPC handlers with validation layer (lines 14-29 for validators, lines 95-173 for device operations)
+- `src/main/services/network-monitor.js` — Multi-device monitoring coordinator using Map-based tracking (lines 14-16 for the services Map, lines 28-59 for start monitoring logic)
+- `src/main/db/database.js` — SQLite operations with prepared statements and foreign key constraints
 - `src/renderer/App.jsx` — React UI with real-time state management (lines 7-11 for state declarations, lines 19-32 for IPC listeners)
 
 ## Looking Ahead

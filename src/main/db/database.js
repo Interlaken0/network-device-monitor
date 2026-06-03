@@ -124,7 +124,42 @@ class DatabaseManager {
         FOREIGN KEY(device_id) REFERENCES devices(id) ON DELETE CASCADE
       );
     `)
-    
+
+    // alert_configurations: Per-device threshold settings
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS alert_configurations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        device_id INTEGER NOT NULL UNIQUE,
+        enabled BOOLEAN DEFAULT 1,
+        latency_threshold_ms INTEGER DEFAULT 150 CHECK(latency_threshold_ms BETWEEN 50 AND 500),
+        consecutive_failures_threshold INTEGER DEFAULT 3 CHECK(consecutive_failures_threshold BETWEEN 1 AND 10),
+        packet_loss_threshold_pct INTEGER DEFAULT 10 CHECK(packet_loss_threshold_pct BETWEEN 1 AND 50),
+        latency_severity TEXT DEFAULT 'warning' CHECK(latency_severity IN ('warning', 'critical')),
+        failures_severity TEXT DEFAULT 'critical' CHECK(failures_severity IN ('warning', 'critical')),
+        packet_loss_severity TEXT DEFAULT 'warning' CHECK(packet_loss_severity IN ('warning', 'critical')),
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(device_id) REFERENCES devices(id) ON DELETE CASCADE
+      );
+    `)
+
+    // alerts: Individual alert events with status tracking
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS alerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        device_id INTEGER NOT NULL,
+        alert_type TEXT CHECK(alert_type IN ('latency', 'consecutive_failures', 'packet_loss')),
+        severity TEXT CHECK(severity IN ('critical', 'warning')),
+        status TEXT DEFAULT 'triggered' CHECK(status IN ('triggered', 'unacknowledged', 'acknowledged', 'resolved')),
+        message TEXT NOT NULL,
+        threshold_value TEXT,
+        actual_value TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        acknowledged_at DATETIME,
+        resolved_at DATETIME,
+        FOREIGN KEY(device_id) REFERENCES devices(id) ON DELETE CASCADE
+      );
+    `)
+
     // Indexes for query optimisation
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_ping_logs_device_time 
@@ -139,11 +174,23 @@ class DatabaseManager {
       CREATE INDEX IF NOT EXISTS idx_ping_logs_device_time_range 
         ON ping_logs(device_id, timestamp DESC);
       
-      CREATE INDEX IF NOT EXISTS idx_outages_start_time 
+      CREATE INDEX IF NOT EXISTS idx_outages_start_time
         ON outages(start_time DESC);
-      
-      CREATE INDEX IF NOT EXISTS idx_ping_logs_timestamp_device 
+
+      CREATE INDEX IF NOT EXISTS idx_ping_logs_timestamp_device
         ON ping_logs(timestamp, device_id);
+
+      CREATE INDEX IF NOT EXISTS idx_alert_config_device
+        ON alert_configurations(device_id);
+
+      CREATE INDEX IF NOT EXISTS idx_alerts_device
+        ON alerts(device_id);
+
+      CREATE INDEX IF NOT EXISTS idx_alerts_status
+        ON alerts(status);
+
+      CREATE INDEX IF NOT EXISTS idx_alerts_created
+        ON alerts(created_at DESC);
     `)
   }
   
@@ -836,8 +883,398 @@ class DatabaseManager {
     return stmt.all(`-${hours} hours`)
   }
 
+  // ========== Alert Configuration Operations ==========
+
+  /**
+   * Create default alert configuration for a device
+   * @param {number} deviceId - Device ID
+   * @returns {Object} Created configuration
+   */
+  createAlertConfiguration(deviceId) {
+    const stmt = this.getStatement(
+      'createAlertConfiguration',
+      `INSERT INTO alert_configurations (device_id, enabled, latency_threshold_ms, consecutive_failures_threshold, packet_loss_threshold_pct, latency_severity, failures_severity, packet_loss_severity)
+       VALUES (?, 1, 150, 3, 10, 'warning', 'critical', 'warning')`
+    )
+
+    const result = stmt.run(deviceId)
+
+    return {
+      id: result.lastInsertRowid,
+      deviceId,
+      enabled: true,
+      latencyThresholdMs: 150,
+      consecutiveFailuresThreshold: 3,
+      packetLossThresholdPct: 10,
+      latencySeverity: 'warning',
+      failuresSeverity: 'critical',
+      packetLossSeverity: 'warning'
+    }
+  }
+
+  /**
+   * Get alert configuration for a device
+   * @param {number} deviceId - Device ID
+   * @returns {Object|null} Alert configuration or null
+   */
+  getAlertConfiguration(deviceId) {
+    const stmt = this.getStatement(
+      'getAlertConfiguration',
+      `SELECT * FROM alert_configurations WHERE device_id = ?`
+    )
+
+    const config = stmt.get(deviceId)
+    if (!config) return null
+
+    return {
+      id: config.id,
+      deviceId: config.device_id,
+      enabled: Boolean(config.enabled),
+      latencyThresholdMs: config.latency_threshold_ms,
+      consecutiveFailuresThreshold: config.consecutive_failures_threshold,
+      packetLossThresholdPct: config.packet_loss_threshold_pct,
+      latencySeverity: config.latency_severity,
+      failuresSeverity: config.failures_severity,
+      packetLossSeverity: config.packet_loss_severity,
+      updatedAt: config.updated_at
+    }
+  }
+
+  /**
+   * Get all alert configurations with device info
+   * @returns {Array} List of alert configurations
+   */
+  getAllAlertConfigurations() {
+    const stmt = this.getStatement(
+      'getAllAlertConfigurations',
+      `SELECT ac.*, d.name as device_name, d.ip_address
+       FROM alert_configurations ac
+       JOIN devices d ON ac.device_id = d.id
+       ORDER BY d.name`
+    )
+
+    const configs = stmt.all()
+    return configs.map(config => ({
+      id: config.id,
+      deviceId: config.device_id,
+      deviceName: config.device_name,
+      ipAddress: config.ip_address,
+      enabled: Boolean(config.enabled),
+      latencyThresholdMs: config.latency_threshold_ms,
+      consecutiveFailuresThreshold: config.consecutive_failures_threshold,
+      packetLossThresholdPct: config.packet_loss_threshold_pct,
+      latencySeverity: config.latency_severity,
+      failuresSeverity: config.failures_severity,
+      packetLossSeverity: config.packet_loss_severity,
+      updatedAt: config.updated_at
+    }))
+  }
+
+  /**
+   * Update alert configuration for a device
+   * @param {number} deviceId - Device ID
+   * @param {Object} updates - Fields to update
+   * @returns {Object} Updated configuration
+   */
+  updateAlertConfiguration(deviceId, updates) {
+    const allowedFields = {
+      enabled: 'enabled',
+      latencyThresholdMs: 'latency_threshold_ms',
+      consecutiveFailuresThreshold: 'consecutive_failures_threshold',
+      packetLossThresholdPct: 'packet_loss_threshold_pct',
+      latencySeverity: 'latency_severity',
+      failuresSeverity: 'failures_severity',
+      packetLossSeverity: 'packet_loss_severity'
+    }
+
+    const setClauses = []
+    const values = []
+
+    for (const [key, value] of Object.entries(updates)) {
+      const dbField = allowedFields[key]
+      if (dbField) {
+        setClauses.push(`${dbField} = ?`)
+        values.push(value)
+      }
+    }
+
+    if (setClauses.length === 0) {
+      throw new Error('No valid fields to update')
+    }
+
+    setClauses.push("updated_at = datetime('now')")
+    values.push(deviceId)
+
+    const stmt = this.db.prepare(
+      `UPDATE alert_configurations SET ${setClauses.join(', ')} WHERE device_id = ?`
+    )
+
+    const result = stmt.run(...values)
+
+    if (result.changes === 0) {
+      throw new Error('Alert configuration not found')
+    }
+
+    return this.getAlertConfiguration(deviceId)
+  }
+
+  /**
+   * Delete alert configuration for a device
+   * @param {number} deviceId - Device ID
+   * @returns {Object} Delete result
+   */
+  deleteAlertConfiguration(deviceId) {
+    const stmt = this.getStatement(
+      'deleteAlertConfiguration',
+      `DELETE FROM alert_configurations WHERE device_id = ?`
+    )
+
+    const result = stmt.run(deviceId)
+    return { changes: result.changes, deviceId }
+  }
+
+  // ========== Alert Event Operations ==========
+
+  /**
+   * Create a new alert event
+   * @param {Object} alert - Alert data
+   * @returns {Object} Created alert
+   */
+  createAlert(alert) {
+    const stmt = this.getStatement(
+      'createAlert',
+      `INSERT INTO alerts (device_id, alert_type, severity, message, threshold_value, actual_value)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+
+    const result = stmt.run(
+      alert.deviceId,
+      alert.alertType,
+      alert.severity,
+      alert.message,
+      alert.thresholdValue ? String(alert.thresholdValue) : null,
+      alert.actualValue ? String(alert.actualValue) : null
+    )
+
+    return {
+      id: result.lastInsertRowid,
+      ...alert,
+      status: 'triggered',
+      createdAt: new Date().toISOString()
+    }
+  }
+
+  /**
+   * Get alert by ID
+   * @param {number} alertId - Alert ID
+   * @returns {Object|null} Alert or null
+   */
+  getAlert(alertId) {
+    const stmt = this.getStatement(
+      'getAlert',
+      `SELECT a.*, d.name as device_name, d.ip_address
+       FROM alerts a
+       JOIN devices d ON a.device_id = d.id
+       WHERE a.id = ?`
+    )
+
+    const alert = stmt.get(alertId)
+    if (!alert) return null
+
+    return {
+      id: alert.id,
+      deviceId: alert.device_id,
+      deviceName: alert.device_name,
+      ipAddress: alert.ip_address,
+      alertType: alert.alert_type,
+      severity: alert.severity,
+      status: alert.status,
+      message: alert.message,
+      thresholdValue: alert.threshold_value,
+      actualValue: alert.actual_value,
+      createdAt: alert.created_at,
+      acknowledgedAt: alert.acknowledged_at,
+      resolvedAt: alert.resolved_at
+    }
+  }
+
+  /**
+   * Get alerts for a device
+   * @param {number} deviceId - Device ID
+   * @param {string} status - Optional status filter
+   * @param {number} limit - Maximum results
+   * @returns {Array} List of alerts
+   */
+  getAlertsByDevice(deviceId, status = null, limit = 100) {
+    let sql = `
+      SELECT a.*, d.name as device_name, d.ip_address
+      FROM alerts a
+      JOIN devices d ON a.device_id = d.id
+      WHERE a.device_id = ?
+    `
+    const params = [deviceId]
+
+    if (status) {
+      sql += ' AND a.status = ?'
+      params.push(status)
+    }
+
+    sql += ' ORDER BY a.created_at DESC LIMIT ?'
+    params.push(limit)
+
+    const stmt = this.getStatement('getAlertsByDevice_' + (status || 'all'), sql)
+    const alerts = stmt.all(...params)
+
+    return alerts.map(alert => ({
+      id: alert.id,
+      deviceId: alert.device_id,
+      deviceName: alert.device_name,
+      ipAddress: alert.ip_address,
+      alertType: alert.alert_type,
+      severity: alert.severity,
+      status: alert.status,
+      message: alert.message,
+      thresholdValue: alert.threshold_value,
+      actualValue: alert.actual_value,
+      createdAt: alert.created_at,
+      acknowledgedAt: alert.acknowledged_at,
+      resolvedAt: alert.resolved_at
+    }))
+  }
+
+  /**
+   * Get all active (unresolved) alerts
+   * @returns {Array} List of active alerts
+   */
+  getActiveAlerts() {
+    const stmt = this.getStatement(
+      'getActiveAlerts',
+      `SELECT a.*, d.name as device_name, d.ip_address
+       FROM alerts a
+       JOIN devices d ON a.device_id = d.id
+       WHERE a.status IN ('triggered', 'unacknowledged', 'acknowledged')
+       ORDER BY a.severity DESC, a.created_at DESC`
+    )
+
+    const alerts = stmt.all()
+    return alerts.map(alert => ({
+      id: alert.id,
+      deviceId: alert.device_id,
+      deviceName: alert.device_name,
+      ipAddress: alert.ip_address,
+      alertType: alert.alert_type,
+      severity: alert.severity,
+      status: alert.status,
+      message: alert.message,
+      thresholdValue: alert.threshold_value,
+      actualValue: alert.actual_value,
+      createdAt: alert.created_at,
+      acknowledgedAt: alert.acknowledged_at,
+      resolvedAt: alert.resolved_at
+    }))
+  }
+
+  /**
+   * Acknowledge an alert
+   * @param {number} alertId - Alert ID
+   * @returns {Object} Updated alert
+   */
+  acknowledgeAlert(alertId) {
+    const stmt = this.getStatement(
+      'acknowledgeAlert',
+      `UPDATE alerts
+       SET status = 'acknowledged', acknowledged_at = datetime('now')
+       WHERE id = ? AND status IN ('triggered', 'unacknowledged')`
+    )
+
+    const result = stmt.run(alertId)
+
+    if (result.changes === 0) {
+      throw new Error('Alert not found or already acknowledged/resolved')
+    }
+
+    return this.getAlert(alertId)
+  }
+
+  /**
+   * Resolve an alert
+   * @param {number} alertId - Alert ID
+   * @returns {Object} Updated alert
+   */
+  resolveAlert(alertId) {
+    const stmt = this.getStatement(
+      'resolveAlert',
+      `UPDATE alerts
+       SET status = 'resolved', resolved_at = datetime('now')
+       WHERE id = ? AND status IN ('triggered', 'unacknowledged', 'acknowledged')`
+    )
+
+    const result = stmt.run(alertId)
+
+    if (result.changes === 0) {
+      throw new Error('Alert not found or already resolved')
+    }
+
+    return this.getAlert(alertId)
+  }
+
+  /**
+   * Resolve all active alerts for a device
+   * @param {number} deviceId - Device ID
+   * @returns {Object} Result with count of resolved alerts
+   */
+  resolveDeviceAlerts(deviceId) {
+    const stmt = this.getStatement(
+      'resolveDeviceAlerts',
+      `UPDATE alerts
+       SET status = 'resolved', resolved_at = datetime('now')
+       WHERE device_id = ? AND status IN ('triggered', 'unacknowledged', 'acknowledged')`
+    )
+
+    const result = stmt.run(deviceId)
+    return { resolvedCount: result.changes, deviceId }
+  }
+
+  /**
+   * Check whether a device has an active (unresolved) alert of a given type.
+   * Used by the alert engine for deduplication.
+   *
+   * @param {number} deviceId - Device ID
+   * @param {string} alertType - Alert type key
+   * @returns {boolean}
+   */
+  hasActiveAlertOfType(deviceId, alertType) {
+    const stmt = this.getStatement(
+      'hasActiveAlertOfType',
+      `SELECT COUNT(*) as count FROM alerts
+       WHERE device_id = ? AND alert_type = ? AND status IN ('triggered', 'unacknowledged', 'acknowledged')`
+    )
+
+    const result = stmt.get(deviceId, alertType)
+    return result.count > 0
+  }
+
+  /**
+   * Resolve all active alerts of a specific type for a device.
+   *
+   * @param {number} deviceId - Device ID
+   * @param {string} alertType - Alert type to resolve
+   * @returns {Object} Result with count of resolved alerts
+   */
+  resolveDeviceAlertsByType(deviceId, alertType) {
+    const stmt = this.getStatement(
+      'resolveDeviceAlertsByType',
+      `UPDATE alerts
+       SET status = 'resolved', resolved_at = datetime('now')
+       WHERE device_id = ? AND alert_type = ? AND status IN ('triggered', 'unacknowledged', 'acknowledged')`
+    )
+
+    const result = stmt.run(deviceId, alertType)
+    return { resolvedCount: result.changes, deviceId, alertType }
+  }
+
   // ========== Utility Methods ==========
-  
+
   /**
    * Close database connection
    * Call on app quit to prevent corruption
@@ -859,11 +1296,15 @@ class DatabaseManager {
     const deviceCount = this.db.prepare('SELECT COUNT(*) as count FROM devices').get().count
     const pingCount = this.db.prepare('SELECT COUNT(*) as count FROM ping_logs').get().count
     const outageCount = this.db.prepare('SELECT COUNT(*) as count FROM outages WHERE end_time IS NULL').get().count
+    const alertConfigCount = this.db.prepare('SELECT COUNT(*) as count FROM alert_configurations').get().count
+    const activeAlertCount = this.db.prepare(`SELECT COUNT(*) as count FROM alerts WHERE status IN ('triggered', 'unacknowledged', 'acknowledged')`).get().count
 
     return {
       deviceCount,
       pingCount,
-      outageCount
+      outageCount,
+      alertConfigCount,
+      activeAlertCount
     }
   }
 

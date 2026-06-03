@@ -13,7 +13,7 @@
  */
 export const calculateStatusFromLatency = (latencyMs, isOnline = true) => {
   if (!isOnline) return 'offline'
-  if (!latencyMs) return 'unknown'
+  if (latencyMs === null || latencyMs === undefined) return 'unknown'
   if (latencyMs < 10) return 'excellent'
   if (latencyMs < 50) return 'good'
   if (latencyMs < 150) return 'fair'

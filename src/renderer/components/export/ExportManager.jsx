@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useDeviceStore } from '../stores/deviceStore'
+import { useDeviceStore } from '../../stores/deviceStore'
 
 /**
  * Export data types supported by the export service.

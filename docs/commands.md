@@ -144,7 +144,7 @@ When writing commit messages, use these prefixes:
 | `feat:` | New feature |
 | `fix:` | Bug fix |
 | `docs:` | Documentation changes |
-| `style:` | Code style changes (formatting, no logic) |
+| `security:` | Security fixes and hardening |
 | `refactor:` | Code refactoring |
 | `test:` | Adding or updating tests |
 | `chore:` | Build process, dependencies, etc. |

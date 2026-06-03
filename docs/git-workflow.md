@@ -259,26 +259,16 @@ Refs #456
 
 ### Configuration
 
-```json
-// package.json
+```bash
+# Husky v9 configuration
+# .husky/commit-msg
+npx --no -- commitlint --edit $1
+
+# package.json — lint-staged only
 {
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
-      "pre-push": "npm run test:unit"
-    }
-  },
   "lint-staged": {
-    "*.{js,jsx}": [
-      "eslint --fix",
-      "prettier --write",
-      "git add"
-    ],
-    "*.md": [
-      "prettier --write",
-      "git add"
-    ]
+    "*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.md": ["prettier --write"]
   }
 }
 ```
@@ -286,22 +276,36 @@ Refs #456
 ### Commitlint Config
 
 ```javascript
-// commitlint.config.js
-module.exports = {
+// .commitlintrc.js
+export default {
   extends: ['@commitlint/config-conventional'],
   rules: {
     'type-enum': [
       2,
       'always',
-      ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'chore', 'security']
+      ['feat', 'fix', 'docs', 'test', 'refactor', 'security', 'chore']
     ],
-    'scope-empty': [2, 'never'],
+    'scope-enum': [
+      2,
+      'always',
+      [
+        'retrospective', 'adr', 'network', 'database', 'integration',
+        'security', 'guide', 'tooling', 'device', 'ping', 'ui',
+        'main', 'preload', 'renderer'
+      ]
+    ],
     'subject-case': [2, 'always', 'sentence-case'],
-    'subject-max-length': [2, 'always', 50],
-    'body-max-line-length': [2, 'always', 72],
-    'references-empty': [1, 'never'] // Warning if no refs
-  }
-};
+    'subject-empty': [2, 'never'],
+    'type-empty': [2, 'never'],
+    'scope-empty': [2, 'never'],
+    'subject-full-stop': [2, 'never', '.'],
+    'header-max-length': [2, 'always', 72]
+  },
+  ignores: [
+    (commit) => commit.startsWith('Merge '),
+    (commit) => commit.startsWith('Revert ')
+  ]
+}
 ```
 
 ---

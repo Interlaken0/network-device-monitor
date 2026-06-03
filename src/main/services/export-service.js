@@ -8,7 +8,7 @@
  */
 
 import { dialog } from 'electron'
-import { getDatabase } from './database.js'
+import { getDatabase } from '../db/database.js'
 
 /**
  * Basic HTML sanitiser for defence in depth
@@ -17,7 +17,7 @@ import { getDatabase } from './database.js'
 class BasicHtmlSanitiser {
   static dangerousTags = new Set([
     'script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea',
-    'button', 'select', 'option', 'link', 'meta', 'style', 'html', 'head', 'body'
+    'button', 'select', 'option', 'link', 'meta', 'style'
   ])
   
   static dangerousAttributes = new Set([
@@ -48,7 +48,7 @@ class BasicHtmlSanitiser {
     }
     
     // Remove dangerous attributes from remaining tags
-    const attributeRegex = /\s+(\w+)=["'][^"']*["']/gi
+    const attributeRegex = /\s+(\w+)=("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/gi
     sanitised = sanitised.replace(attributeRegex, (match, attrName) => {
       if (this.dangerousAttributes.has(attrName.toLowerCase())) {
         return ''
@@ -118,21 +118,8 @@ class ExportService {
         data = db.getOutagesForExport(query.deviceId, query.startDate, query.endDate)
       }
       
-      // Sanitise all string fields
-      const sanitisedData = data.map(row => {
-        const sanitisedRow = {}
-        for (const [key, value] of Object.entries(row)) {
-          if (typeof value === 'string') {
-            sanitisedRow[key] = BasicHtmlSanitiser.escapeHtml(value)
-          } else {
-            sanitisedRow[key] = value
-          }
-        }
-        return sanitisedRow
-      })
-      
-      // Generate CSV with proper escaping
-      return this._generateCSVContent(sanitisedData, columns)
+      // Generate CSV with proper escaping (no HTML sanitisation — CSV is not HTML)
+      return this._generateCSVContent(data, columns)
       
     } catch (error) {
       console.error('Error generating CSV export:', error)
@@ -150,12 +137,20 @@ class ExportService {
     try {
       const db = await getDatabase()
       
-      // Get data
+      // Get data based on query type
       let data = {}
       if (query.type === 'summary') {
         data.devices = db.getAllDevices()
         data.stats = db.getStats()
         data.recentPings = db.getRecentPings(query.deviceId, query.limit || 100)
+      } else if (query.type === 'devices') {
+        data.devices = db.getAllDevices()
+      } else if (query.type === 'ping_logs') {
+        data.pingLogs = db.getPingLogsForExport(query.deviceId, query.startDate, query.endDate)
+        data.devices = db.getAllDevices()
+      } else if (query.type === 'outages') {
+        data.outages = db.getOutagesForExport(query.deviceId, query.startDate, query.endDate)
+        data.devices = db.getAllDevices()
       }
       
       // Generate HTML template
@@ -261,16 +256,27 @@ class ExportService {
    */
   _generateHTMLTemplate(data, template) {
     const timestamp = new Date().toLocaleString()
-    const title = template.title || 'Network Monitor Report'
+    const templateKey = template.template || template.title || 'report'
+    const titleMap = {
+      uptime: 'Uptime Report',
+      latency: 'Latency Analysis',
+      outage: 'Outage Summary'
+    }
+    const title = titleMap[templateKey] || template.title || 'Network Monitor Report'
     const includeStats = template.includeStats !== false
-    
+
+    const hasPingLogs = data.pingLogs && data.pingLogs.length > 0
+    const hasOutages = data.outages && data.outages.length > 0
+    const hasDevices = data.devices && data.devices.length > 0
+    const hasStats = data.stats && includeStats
+
     return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Monitor Report - ${timestamp}</title>
+    <title>${title} - ${timestamp}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
@@ -282,6 +288,8 @@ class ExportService {
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
         .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
+        .section { margin-bottom: 30px; }
+        .section h2 { margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -289,48 +297,112 @@ class ExportService {
         <h1>${title}</h1>
         <p>Generated on: ${timestamp}</p>
     </div>
-    
-    ${includeStats ? `
+
+    ${hasStats ? `
     <div class="stats">
         <div class="stat-card">
-            <div class="stat-value">${data.stats?.deviceCount || 0}</div>
+            <div class="stat-value">${data.stats.deviceCount || 0}</div>
             <div class="stat-label">Total Devices</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">${data.stats?.pingCount || 0}</div>
+            <div class="stat-value">${data.stats.pingCount || 0}</div>
             <div class="stat-label">Total Pings</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">${data.stats?.outageCount || 0}</div>
+            <div class="stat-value">${data.stats.outageCount || 0}</div>
             <div class="stat-label">Total Outages</div>
         </div>
     </div>
     ` : ''}
-    
-    <h2>Device List</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Network Address</th>
-                <th>Type</th>
-                <th>Location</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${(data.devices || []).map(device => `
+
+    ${hasPingLogs ? `
+    <div class="section">
+        <h2>Ping Logs</h2>
+        <table>
+            <thead>
                 <tr>
-                    <td>${BasicHtmlSanitiser.escapeHtml(device.name || '')}</td>
-                    <td>${BasicHtmlSanitiser.escapeHtml(device.ip_address || '')}</td>
-                    <td>${BasicHtmlSanitiser.escapeHtml(device.device_type || '')}</td>
-                    <td>${BasicHtmlSanitiser.escapeHtml(device.location || '')}</td>
-                    <td>${device.is_active ? 'Active' : 'Inactive'}</td>
+                    <th>Device</th>
+                    <th>IP Address</th>
+                    <th>Latency (ms)</th>
+                    <th>Success</th>
+                    <th>Packet Loss</th>
+                    <th>Timestamp</th>
                 </tr>
-            `).join('')}
-        </tbody>
-    </table>
-    
+            </thead>
+            <tbody>
+                ${data.pingLogs.map(log => `
+                    <tr>
+                        <td>${BasicHtmlSanitiser.escapeHtml(log.device_name || '')}</td>
+                        <td>${BasicHtmlSanitiser.escapeHtml(log.ip_address || '')}</td>
+                        <td>${log.latency_ms !== null ? log.latency_ms : 'N/A'}</td>
+                        <td>${log.success ? 'Yes' : 'No'}</td>
+                        <td>${log.packet_loss !== null ? log.packet_loss + '%' : 'N/A'}</td>
+                        <td>${log.timestamp || ''}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>
+    ` : ''}
+
+    ${hasOutages ? `
+    <div class="section">
+        <h2>Outages</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Device</th>
+                    <th>IP Address</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Duration (s)</th>
+                    <th>Severity</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.outages.map(outage => `
+                    <tr>
+                        <td>${BasicHtmlSanitiser.escapeHtml(outage.device_name || '')}</td>
+                        <td>${BasicHtmlSanitiser.escapeHtml(outage.ip_address || '')}</td>
+                        <td>${outage.start_time || ''}</td>
+                        <td>${outage.end_time || 'Ongoing'}</td>
+                        <td>${outage.duration_seconds !== null ? outage.duration_seconds : 'N/A'}</td>
+                        <td>${BasicHtmlSanitiser.escapeHtml(outage.severity || '')}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>
+    ` : ''}
+
+    ${hasDevices ? `
+    <div class="section">
+        <h2>Device List</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Network Address</th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.devices.map(device => `
+                    <tr>
+                        <td>${BasicHtmlSanitiser.escapeHtml(device.name || '')}</td>
+                        <td>${BasicHtmlSanitiser.escapeHtml(device.ip_address || '')}</td>
+                        <td>${BasicHtmlSanitiser.escapeHtml(device.device_type || '')}</td>
+                        <td>${BasicHtmlSanitiser.escapeHtml(device.location || '')}</td>
+                        <td>${device.is_active ? 'Active' : 'Inactive'}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>
+    ` : ''}
+
     <div class="footer">
         <p>Report generated by Network Monitor v0.2.0</p>
         <p>This report contains sanitised data for security purposes</p>

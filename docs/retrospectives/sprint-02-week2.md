@@ -80,13 +80,13 @@ The decision to use Zustand was made in Sprint 2 Week 2 based on projected Sprin
 ## Where the Code Lives
 
 - `src/main/index.js:45-48` — Consolidated `setWindowOpenHandler` (SEC-005 fix)
-- `src/main/ipc-handlers.js:120,124,128` — Sanitised error messages (SEC-001 fix)
+- `src/main/ipc/handlers.js:120,124,128` — Sanitised error messages (SEC-001 fix)
 - `docs/adr/adr-003-react-framework.md` — React 18 framework decision
 - `docs/adr/adr-004-state-management.md` — Zustand selection (Sprint 3 preparation)
 - `docs/adr/adr-006-build-tool.md` — Vite build tool decision
 - `tests/integration/ipc-device-lifecycle.test.js` — Updated error message assertions
 - `scripts/fix-coverage-timezone.js` — Coverage report timezone fix
-- `tests/unit/database-runtime.test.js` — Runtime behavior verification tests
+- `tests/unit/main/database-runtime.test.js` — Runtime behavior verification tests
 
 ---
 

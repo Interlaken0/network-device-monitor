@@ -1,5 +1,5 @@
 import ping from 'ping'
-import { getDatabase } from './database.js'
+import { getDatabase } from '../db/database.js'
 import os from 'os'
 
 /**
@@ -18,6 +18,7 @@ class PingService {
     this.deviceId = null
     this.ipAddress = null
     this.intervalMs = 5000 // 5 second default interval
+    this.timeoutId = null
     
     // Outage detection thresholds
     this.outageThresholds = {
@@ -90,7 +91,12 @@ class PingService {
 
     console.log(`Stopping ping monitoring for ${this.ipAddress}`)
     this.isRunning = false
-    
+
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId)
+      this.timeoutId = null
+    }
+
     if (this.abortController) {
       this.abortController.abort()
       this.abortController = null
@@ -211,6 +217,7 @@ class PingService {
    */
   _schedulePings(onResult) {
     const scheduleNext = async () => {
+      this.timeoutId = null
       if (!this.isRunning || this.abortController?.signal.aborted) {
         return
       }
@@ -219,11 +226,11 @@ class PingService {
 
       // Schedule next ping if still running
       if (this.isRunning) {
-        setTimeout(scheduleNext, this.intervalMs)
+        this.timeoutId = setTimeout(scheduleNext, this.intervalMs)
       }
     }
 
-    setTimeout(scheduleNext, this.intervalMs)
+    this.timeoutId = setTimeout(scheduleNext, this.intervalMs)
   }
 
   /**

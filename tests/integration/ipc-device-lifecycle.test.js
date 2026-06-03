@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 describe('IPC Device Lifecycle Integration', () => {
-  const ipcHandlersPath = path.join(__dirname, '../../src/main/ipc-handlers.js')
+  const ipcHandlersPath = path.join(__dirname, '../../src/main/ipc/handlers.js')
 
   describe('File Existence', () => {
     it('ipc-handlers.js exists', () => {
@@ -73,7 +73,7 @@ describe('IPC Device Lifecycle Integration', () => {
         content.indexOf("ipcMain.handle('device:create'"),
         content.indexOf("ipcMain.handle('device:read'")
       )
-      expect(handlerSection).toContain('return { success: false, error: error.message }')
+      expect(handlerSection).toContain('wrapHandler')
     })
   })
 
@@ -206,26 +206,20 @@ describe('IPC Device Lifecycle Integration', () => {
   })
 
   describe('Error Handling Patterns', () => {
-    it('all handlers use try-catch blocks', () => {
+    it('all handlers use wrapHandler for error handling', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
-      const deviceCreateHandler = content.substring(
-        content.indexOf("ipcMain.handle('device:create'")
-      )
-      expect(deviceCreateHandler).toContain('try {')
-      expect(deviceCreateHandler).toContain('} catch (error) {')
+      expect(content).toContain('function wrapHandler')
+      expect(content).toContain('wrapHandler(')
     })
 
     it('catches errors and returns structured error response', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
-      expect(content).toMatch(/catch \(error\) \{\s*console\.error.*\n\s*return \{ success: false, error: error\.message \}/s)
+      expect(content).toMatch(/catch \(error\) \{[\s\S]*?console\.error[\s\S]*?return \{ success: false, error: error\.message \}/)
     })
 
     it('logs errors to console for debugging', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
-      expect(content).toContain("console.error('Error creating device:'")
-      expect(content).toContain("console.error('Error reading device:'")
-      expect(content).toContain("console.error('Error updating device:'")
-      expect(content).toContain("console.error('Error deleting device:'")
+      expect(content).toContain("console.error(`Error ${name}:`")
     })
 
     it('error responses include error message string', () => {
@@ -252,12 +246,12 @@ describe('IPC Device Lifecycle Integration', () => {
 
     it('imports database module', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
-      expect(content).toContain("import { getDatabase } from './database.js'")
+      expect(content).toContain("import { getDatabase } from '../db/database.js'")
     })
 
     it('imports network monitor', () => {
       const content = fs.readFileSync(ipcHandlersPath, 'utf-8')
-      expect(content).toContain("import networkMonitor from './network-monitor.js'")
+      expect(content).toContain("import networkMonitor from '../services/network-monitor.js'")
     })
 
     it('exports default with registerDatabaseHandlers', () => {

@@ -131,7 +131,7 @@ Runs Jest tests including:
 
 ### Test coverage:
 ```bash
-npm test -- --coverage
+npm run test:coverage
 ```
 
 Generates coverage report in `coverage/` directory.
@@ -149,11 +149,14 @@ network-device-monitor/
 ├── src/
 │   ├── main/                   # Electron main process
 │   │   ├── index.js            # App entry point, window creation
-│   │   ├── database.js         # SQLite database manager
-│   │   ├── ipc-handlers.js     # IPC communication handlers
-│   │   ├── network-monitor.js  # Multi-device coordinator
-│   │   ├── ping-service.js     # ICMP ping implementation
-│   │   └── export-service.js   # CSV/HTML export generation
+│   │   ├── db/
+│   │   │   └── database.js     # SQLite database manager
+│   │   ├── ipc/
+│   │   │   └── handlers.js     # IPC communication handlers
+│   │   ├── services/
+│   │   │   ├── network-monitor.js  # Multi-device coordinator
+│   │   │   ├── ping-service.js     # ICMP ping implementation
+│   │   │   └── export-service.js   # CSV/HTML export generation
 │   ├── preload/                # Preload scripts
 │   │   └── index.js            # Secure API bridge
 │   └── renderer/               # React frontend
@@ -277,7 +280,7 @@ The preload script should output to `out/preload/index.cjs` (not `.mjs`).
 - **Export Manager** — Export ping logs and outages to CSV or HTML report templates (Uptime, Latency, Outage)
 - **Virtual scrolling** on large data tables for performance
 - **Security hardening** — Rate limiting on exports, input sanitisation, path traversal prevention
-- **403 tests** covering all new components and security utilities
+- **451+ tests** across 16 test files covering all components and security utilities
 
 ---
 

@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 describe('Database Advanced Queries', () => {
-  const databasePath = path.join(__dirname, '../../src/main/database.js')
+  const databasePath = path.join(__dirname, '../../../src/main/db/database.js')
 
   describe('File Existence', () => {
     it('database.js exists', () => {
@@ -100,7 +100,7 @@ describe('Database Advanced Queries', () => {
   })
 
   describe('IPC Handler Integration', () => {
-    const ipcPath = path.join(__dirname, '../../src/main/ipc-handlers.js')
+    const ipcPath = path.join(__dirname, '../../../src/main/ipc/handlers.js')
 
     it('ipc-handlers.js exists', () => {
       expect(fs.existsSync(ipcPath)).toBe(true)
@@ -137,7 +137,7 @@ describe('Database Advanced Queries', () => {
   })
 
   describe('Preload Script Exposure', () => {
-    const preloadPath = path.join(__dirname, '../../src/preload/index.js')
+    const preloadPath = path.join(__dirname, '../../../src/preload/index.js')
 
     it('preload script exists', () => {
       expect(fs.existsSync(preloadPath)).toBe(true)
@@ -234,7 +234,7 @@ describe('Database Advanced Queries', () => {
   })
 
   describe('IPC Handler: device:getStatusSummary', () => {
-    const ipcPath = path.join(__dirname, '../../src/main/ipc-handlers.js')
+    const ipcPath = path.join(__dirname, '../../../src/main/ipc/handlers.js')
 
     it('handler exists', () => {
       const content = fs.readFileSync(ipcPath, 'utf-8')
@@ -260,7 +260,7 @@ describe('Database Advanced Queries', () => {
   })
 
   describe('Preload: getDeviceStatusSummary', () => {
-    const preloadPath = path.join(__dirname, '../../src/preload/index.js')
+    const preloadPath = path.join(__dirname, '../../../src/preload/index.js')
 
     it('exposed to renderer', () => {
       const content = fs.readFileSync(preloadPath, 'utf-8')

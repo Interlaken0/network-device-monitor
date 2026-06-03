@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react'
 import './App.css'
-import Dashboard from './components/Dashboard'
-import HistoricalAnalysis from './components/HistoricalAnalysis'
-import OutageAnalysis from './components/OutageAnalysis'
-import ExportManager from './components/ExportManager'
-import ToastNotifications from './components/ToastNotifications'
+import Dashboard from './components/dashboard/Dashboard'
+import HistoricalAnalysis from './components/analysis/HistoricalAnalysis'
+import OutageAnalysis from './components/analysis/OutageAnalysis'
+import ExportManager from './components/export/ExportManager'
+import AlertConfiguration from './components/alerts/AlertConfiguration'
+import ToastNotifications from './components/alerts/ToastNotifications'
 import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
 import { useThemeStore, selectTheme, selectToggleTheme } from './stores/themeStore'
 import { getLatencyColourClass } from './utils/status'
@@ -121,6 +122,9 @@ function App() {
 
         {/* Export Manager (Sprint 4) */}
         <ExportManager />
+
+        {/* Alert Configuration (Sprint 5) */}
+        <AlertConfiguration />
 
         {/* Add Device Form */}
         <section className="card">

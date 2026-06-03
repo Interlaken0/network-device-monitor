@@ -35,7 +35,7 @@
 **Rationale:** Synchronous API simplifies IPC architecture and eliminates callback complexity. better-sqlite3 offers the fastest SQLite performance for desktop applications and supports prepared statement caching. The native compilation requirement is mitigated through electron-rebuild configuration.
 
 **Files affected:**
-- `src/main/database.js` - Singleton DatabaseManager with prepared statement caching
+- `src/main/db/database.js` - Singleton DatabaseManager with prepared statement caching
 - `package.json` - Native module dependencies and rebuild scripts
 
 ### Decision 3: Jest over Vitest for Testing Framework (Provisional)
@@ -48,8 +48,8 @@
 
 **Files affected:**
 - `jest.config.js` - Test configuration with ES module support and coverage settings
-- `tests/unit/database.test.js` - Database CRUD operation tests
-- `tests/unit/ping-service.test.js` - ICMP ping validation tests
+- `tests/unit/main/database.test.js` - Database CRUD operation tests
+- `tests/unit/main/ping-service.test.js` - ICMP ping validation tests
 
 ## Challenges Encountered
 
@@ -73,12 +73,12 @@
 
 ## Code References
 
-- `src/main/database.js:1-498` - DatabaseManager singleton with prepared statement caching, schema initialisation, and CRUD operations for devices, ping logs, and outages
-- `src/main/ipc-handlers.js:1-228` - IPC bridge with input validation for IP addresses, device names, and device types; handles ping monitoring lifecycle
-- `src/main/ping-service.js:1-203` - PingService class wrapping the ping library with AbortController cancellation, automatic database logging, and outage detection
+- `src/main/db/database.js:1-498` - DatabaseManager singleton with prepared statement caching, schema initialisation, and CRUD operations for devices, ping logs, and outages
+- `src/main/ipc/handlers.js:1-228` - IPC bridge with input validation for IP addresses, device names, and device types; handles ping monitoring lifecycle
+- `src/main/services/ping-service.js:1-203` - PingService class wrapping the ping library with AbortController cancellation, automatic database logging, and outage detection
 - `src/renderer/App.jsx:1-356` - React frontend with device CRUD forms, real-time latency display with colour-coded badges, and live ping result logging
 - `src/preload/index.js` - Secure context bridge exposing only validated IPC channels to renderer process
-- `tests/unit/database.test.js` - Unit tests for database CRUD operations using in-memory sqlite3
+- `tests/unit/main/database.test.js` - Unit tests for database CRUD operations using in-memory sqlite3
 - `electron.vite.config.js` - Vite configuration for Electron with separate build targets for main, preload, and renderer processes
 
 ---

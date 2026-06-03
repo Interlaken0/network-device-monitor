@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 describe('Database Runtime Behavior Tests', () => {
-  const databasePath = path.join(__dirname, '../../src/main/database.js')
+  const databasePath = path.join(__dirname, '../../../src/main/db/database.js')
 
   describe('Method Existence and Signatures', () => {
     it('database.js exists', () => {
@@ -210,7 +210,7 @@ describe('Database Runtime Behavior Tests', () => {
   })
 
   describe('IPC Handler Runtime Behavior', () => {
-    const ipcPath = path.join(__dirname, '../../src/main/ipc-handlers.js')
+    const ipcPath = path.join(__dirname, '../../../src/main/ipc/handlers.js')
 
     it('ipc-handlers.js exists', () => {
       expect(fs.existsSync(ipcPath)).toBe(true)
@@ -268,6 +268,40 @@ describe('Database Runtime Behavior Tests', () => {
       expect(summaryMatch[0]).toMatch(/maxLatencyMs:/)
       expect(summaryMatch[0]).toMatch(/outageCount:/)
       expect(summaryMatch[0]).toMatch(/totalDowntimeSeconds:/)
+    })
+  })
+
+  describe('Alert Operations (Sprint 5)', () => {
+    it('hasActiveAlertOfType method exists', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toContain('hasActiveAlertOfType(deviceId, alertType)')
+    })
+
+    it('hasActiveAlertOfType queries active alerts by type', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toContain("'hasActiveAlertOfType'")
+      expect(content).toMatch(/SELECT COUNT\(\*\) as count FROM alerts/)
+      expect(content).toMatch(/alert_type = \?/)
+      expect(content).toMatch(/status IN \('triggered', 'unacknowledged', 'acknowledged'\)/)
+    })
+
+    it('resolveDeviceAlertsByType method exists', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toContain('resolveDeviceAlertsByType(deviceId, alertType)')
+    })
+
+    it('resolveDeviceAlertsByType updates status and resolved_at', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toContain("'resolveDeviceAlertsByType'")
+      expect(content).toMatch(/UPDATE alerts/)
+      expect(content).toMatch(/SET status = 'resolved'/)
+      expect(content).toMatch(/resolved_at = datetime\('now'\)/)
+    })
+
+    it('createAlert uses parameterised values', () => {
+      const content = fs.readFileSync(databasePath, 'utf-8')
+      expect(content).toMatch(/INSERT INTO alerts \(device_id, alert_type, severity, message, threshold_value, actual_value\)/)
+      expect(content).toMatch(/VALUES \(\?, \?, \?, \?, \?, \?\)/)
     })
   })
 })

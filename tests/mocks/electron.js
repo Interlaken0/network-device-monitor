@@ -45,9 +45,14 @@ export const shell = {
   openExternal: jest.fn()
 }
 
+export const dialog = {
+  showSaveDialog: jest.fn(() => Promise.resolve({ canceled: false, filePath: '/mock/export.html' }))
+}
+
 export default {
   app,
   ipcMain,
   BrowserWindow,
-  shell
+  shell,
+  dialog
 }

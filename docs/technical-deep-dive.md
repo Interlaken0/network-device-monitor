@@ -68,15 +68,12 @@
 | Lowdb | Zero config, JSON-based | No queries, poor performance | Tiny apps (<1000 records) |
 | Realm | Object-oriented, reactive | Commercial license, heavy | Mobile-first apps |
 
-**Better-sqlite3 Best Practices:**
-```javascript
-// WRONG - Creating connections repeatedly
-function getDevice(id) {
-  const db = new Database('app.db');  // ❌ Memory leak
-  return db.prepare('SELECT * FROM devices WHERE id = ?').get(id);
-}
+**Better-sqlite3 Best Practices (Recommended Pattern):**
 
-// CORRECT - Singleton pattern with prepared statement caching
+The actual implementation uses a singleton `DatabaseManager` class with lazy-loaded `better-sqlite3`, prepared statement caching via `getStatement()`, and WAL mode. See `@src/main/db/database.js` for the full implementation.
+
+```javascript
+// Recommended pattern: Singleton with prepared statement caching
 class DatabaseManager {
   static instance = null;
   statements = new Map();
@@ -88,15 +85,79 @@ class DatabaseManager {
     return DatabaseManager.instance;
   }
   
-  getDevice(id) {
-    if (!this.statements.has('getDevice')) {
-      this.statements.set('getDevice', 
-        this.db.prepare('SELECT * FROM devices WHERE id = ?')
-      );
+  // Actual method from the codebase
+  getStatement(name, sql) {
+    if (!this.statements.has(name)) {
+      this.statements.set(name, this.db.prepare(sql));
     }
-    return this.statements.get('getDevice').get(id);
+    return this.statements.get(name);
   }
 }
+```
+
+**Database Schema (Entity Relationship Diagram):**
+
+```mermaid
+erDiagram
+    DEVICES ||--o{ PING_LOGS : generates
+    DEVICES ||--o{ OUTAGES : experiences
+    DEVICES ||--o| ALERT_CONFIGURATIONS : configures
+    DEVICES ||--o{ ALERTS : triggers
+
+    DEVICES {
+        int id PK
+        string name
+        string ip_address
+        string device_type
+        string location
+        boolean is_active
+        datetime created_at
+    }
+
+    PING_LOGS {
+        int id PK
+        int device_id FK
+        float latency_ms
+        boolean success
+        boolean packet_loss
+        datetime timestamp
+    }
+
+    OUTAGES {
+        int id PK
+        int device_id FK
+        datetime start_time
+        datetime end_time
+        int duration_seconds
+        string severity
+    }
+
+    ALERT_CONFIGURATIONS {
+        int id PK
+        int device_id FK
+        boolean enabled
+        int latency_threshold_ms
+        int consecutive_failures_threshold
+        int packet_loss_threshold_pct
+        string latency_severity
+        string failures_severity
+        string packet_loss_severity
+        datetime updated_at
+    }
+
+    ALERTS {
+        int id PK
+        int device_id FK
+        string alert_type
+        string severity
+        string status
+        string message
+        string threshold_value
+        string actual_value
+        datetime created_at
+        datetime acknowledged_at
+        datetime resolved_at
+    }
 ```
 
 ### 2.2 Network/Ping Libraries
@@ -110,46 +171,139 @@ class DatabaseManager {
 | net-ping-fix | Bug fixes on node-net-ping | Smaller community | Fork consideration |
 | child_process direct | No dependency | Manual parsing per OS | Too low-level |
 
-**Ping Implementation Pattern:**
+**Actual PingService Implementation:**
+
+`@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\services\ping-service.js`
+
 ```javascript
-// Elite pattern: AbortController for cancellation
 class PingService {
-  abortControllers = new Map();
-  
-  async startMonitoring(ip, interval = 5000) {
-    const controller = new AbortController();
-    this.abortControllers.set(ip, controller);
+  constructor() {
+    this.abortController = null
+    this.isRunning = false
+    this.deviceId = null
+    this.ipAddress = null
+    this.intervalMs = 5000
     
-    while (!controller.signal.aborted) {
-      try {
-        const result = await ping.promise.probe(ip, {
-          timeout: 3,
-          extra: ['-c', '1']  // Single packet
-        });
-        this.handleResult(ip, result);
-      } catch (error) {
-        this.handleError(ip, error);
-      }
-      
-      await this.delay(interval, controller.signal);
+    // Outage detection thresholds
+    this.outageThresholds = {
+      consecutiveFailures: 3,
+      maxLatencyMs: 1000,
+      criticalLatencyMs: 5000
+    }
+    
+    // Outage state tracking
+    this.outageState = {
+      consecutiveFailures: 0,
+      lastSuccessfulPing: null,
+      activeOutageSeverity: null
     }
   }
   
-  stopMonitoring(ip) {
-    this.abortControllers.get(ip)?.abort();
-    this.abortControllers.delete(ip);
+  async start(deviceId, ipAddress, intervalMs = 5000, onResult = null) {
+    if (this.isRunning) {
+      throw new Error('PingService already running. Stop it first.')
+    }
+    
+    this.deviceId = deviceId
+    this.ipAddress = ipAddress
+    this.intervalMs = intervalMs
+    this.isRunning = true
+    this.abortController = new AbortController()
+    
+    // Immediate first ping
+    await this._pingOnce(onResult)
+    
+    // Schedule subsequent pings via recursive setTimeout
+    this._schedulePings(onResult)
   }
   
-  delay(ms, signal) {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(resolve, ms);
-      signal?.addEventListener('abort', () => {
-        clearTimeout(timeout);
-        reject(new Error('Aborted'));
-      });
-    });
+  stop() {
+    if (!this.isRunning) return
+    this.isRunning = false
+    
+    if (this.abortController) {
+      this.abortController.abort()
+      this.abortController = null
+    }
+  }
+  
+  async _pingOnce(onResult) {
+    try {
+      if (this.abortController?.signal.aborted) return
+      
+      const isWindows = os.platform() === 'win32'
+      const result = await ping.promise.probe(this.ipAddress, {
+        timeout: 3,
+        extra: isWindows ? ['-n', '1', '-w', '3000'] : ['-c', '1']
+      })
+      
+      // Record to database
+      const db = await getDatabase()
+      db.recordPing(pingData)
+      
+      // Handle outage conditions
+      if (!result.alive) {
+        this.outageState.consecutiveFailures++
+        await this._handleOutage()
+      } else {
+        this.outageState.consecutiveFailures = 0
+        await this._resolveOutage()
+      }
+      
+      if (onResult) onResult(pingData)
+      
+    } catch (error) {
+      const db = await getDatabase()
+      db.recordPing(failedPingData)
+      this.outageState.consecutiveFailures++
+      await this._handleOutage()
+      if (onResult) onResult(failedPingData)
+    }
+  }
+  
+  _schedulePings(onResult) {
+    const scheduleNext = async () => {
+      if (!this.isRunning || this.abortController?.signal.aborted) return
+      await this._pingOnce(onResult)
+      if (this.isRunning) {
+        setTimeout(scheduleNext, this.intervalMs)
+      }
+    }
+    setTimeout(scheduleNext, this.intervalMs)
   }
 }
+```
+
+**Device Monitoring Lifecycle (Flowchart):**
+
+```mermaid
+flowchart TD
+    A[User Clicks Start Monitoring] --> B{Already Monitoring?}
+    B -->|Yes| C[Return already-running]
+    B -->|No| D{Device Exists in DB?}
+    D -->|No| E[Throw not found error]
+    D -->|Yes| F[Create PingService Instance]
+    F --> G[Send ICMP Ping]
+    G --> H{Response Received?}
+    H -->|Yes| I[Log latency_ms to ping_logs]
+    I --> J{Latency > Threshold?}
+    J -->|Yes| K[Create/End Outage for High Latency]
+    J -->|No| L[Reset Consecutive Failures]
+    L --> M[Resolve Any Active Outage]
+    H -->|No| N[Log Failed Ping]
+    N --> O[Increment Consecutive Failures]
+    O --> P{Failures >= Threshold?}
+    P -->|Yes| Q[Create Outage Record]
+    P -->|No| R[Continue Monitoring]
+    K --> S[Broadcast ping:result to UI]
+    M --> S
+    R --> T[Schedule Next Ping via setTimeout]
+    S --> T
+    T --> G
+    Q --> S
+    T --> U{User Clicks Stop?}
+    U -->|Yes| V[AbortController.stop]
+    U -->|No| G
 ```
 
 ### 2.3 Charting Libraries
@@ -164,9 +318,12 @@ class PingService {
 | Victory | Cross-platform (React Native) | Smaller ecosystem | Mobile+Web apps |
 | Tremor | Pre-built dashboard components | Less customisation | Rapid dashboards |
 
-**Performance Optimisation for Recharts:**
+**Performance Optimisation for Recharts (Recommended Pattern):**
+
+These patterns are not currently implemented in the codebase but are recommended for future optimisation when handling large datasets.
+
 ```javascript
-// Elite pattern: Data decimation for large datasets
+// Recommended pattern: Data decimation for large datasets
 const useDecimatedData = (data, maxPoints = 100) => {
   return useMemo(() => {
     if (data.length <= maxPoints) return data;
@@ -176,7 +333,7 @@ const useDecimatedData = (data, maxPoints = 100) => {
   }, [data, maxPoints]);
 };
 
-// Elite pattern: Custom tooltip for performance
+// Recommended pattern: Custom tooltip for performance
 const CustomTooltip = memo(({ active, payload }) => {
   if (!active || !payload?.length) return null;
   
@@ -202,48 +359,47 @@ const CustomTooltip = memo(({ active, payload }) => {
 | Valtio | Minimal | Low | 2KB | Proxy-based |
 | Context API | None | Low | 0KB | Prop drilling only |
 
-**Zustand Best Practice:**
-```javascript
-// Elite pattern: Slice pattern for scalability
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+**Zustand Pattern:**
 
+The actual implementation uses a monolithic store in `@src/renderer/stores/deviceStore.js`. The slice pattern below is a recommended refactor for future scalability.
+
+```javascript
+// Actual implementation (monolithic store)
+export const useDeviceStore = create(
+  devtools(
+    (set, get) => ({
+      // Device list state
+      devices: [],
+      isLoading: false,
+      error: null,
+      
+      // Ping monitoring state
+      pingResults: {},
+      isMonitoring: {},
+      pingHistory: {},
+      
+      // Actions
+      setDevices: (devices) => set({ devices, isLoading: false, error: null }),
+      addDevice: (device) => set(
+        (state) => ({ devices: [...state.devices, device] }),
+        false,
+        'addDevice'
+      ),
+      // ... additional state and actions
+    }),
+    { name: 'DeviceStore' }
+  )
+)
+
+// Recommended pattern for future: Slice pattern for scalability
 const createDeviceSlice = (set, get) => ({
   devices: [],
   addDevice: (device) => set(
     state => ({ devices: [...state.devices, device] }),
     false,
     'device/add'
-  ),
-  getActiveDevices: () => get().devices.filter(d => d.isActive)
-});
-
-const createPingSlice = (set, get) => ({
-  pingResults: {},
-  recordPing: (deviceId, result) => set(
-    state => ({
-      pingResults: {
-        ...state.pingResults,
-        [deviceId]: [...(state.pingResults[deviceId] || []), result].slice(-100)
-      }
-    }),
-    false,
-    'ping/record'
   )
 });
-
-export const useStore = create(
-  devtools(
-    persist(
-      (set, get) => ({
-        ...createDeviceSlice(set, get),
-        ...createPingSlice(set, get)
-      }),
-      { name: 'network-monitor-storage' }
-    ),
-    { name: 'NetworkMonitorStore' }
-  )
-);
 ```
 
 ---
@@ -286,76 +442,191 @@ export const useStore = create(
 | Latency | Numeric range (0-30000ms) | Float cast | Parameterised query |
 
 **Validation Implementation:**
+
+`@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js:141`
+
 ```javascript
-// Elite pattern: Validator composition
+// Actual validators — return booleans, not objects
 const validators = {
   ipAddress: (value) => {
-    const ipv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-    const ipv6 = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-    return ipv4.test(value) || ipv6.test(value) 
-      ? { valid: true } 
-      : { valid: false, error: 'Invalid IP address format' };
+    const ipv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+    const ipv6 = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/
+    return ipv4.test(value) || ipv6.test(value)
   },
-  
-  deviceName: (value) => {
-    if (!value || value.length < 1) return { valid: false, error: 'Name required' };
-    if (value.length > 100) return { valid: false, error: 'Name too long (max 100)' };
-    if (!/^[a-zA-Z0-9\s-_]+$/.test(value)) return { valid: false, error: 'Invalid characters' };
-    return { valid: true, sanitised: value.trim() };
-  }
-};
 
-// Usage with early return pattern
-function createDevice(input) {
-  const ipValidation = validators.ipAddress(input.ipAddress);
-  if (!ipValidation.valid) throw new ValidationError(ipValidation.error);
-  
-  const nameValidation = validators.deviceName(input.name);
-  if (!nameValidation.valid) throw new ValidationError(nameValidation.error);
-  
-  // Safe to use validated, sanitised data
-  return db.prepare('INSERT INTO devices (name, ip_address) VALUES (?, ?)')
-    .run(nameValidation.sanitised, ipValidation.valid);
+  hostname: (value) => {
+    if (!value || value.length > 253 || value.length < 1) return false
+    const labels = value.split('.')
+    const labelRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/
+    for (const label of labels) {
+      if (!labelRegex.test(label)) return false
+    }
+    return true
+  },
+
+  networkAddress: async (value) => {
+    if (validators.ipAddress(value)) return true
+    if (validators.hostname(value)) {
+      // Verify hostname is resolvable
+      try {
+        await new Promise((resolve, reject) => {
+          dns.lookup(value, (err, address) => {
+            if (err) reject(err)
+            else resolve(address)
+          })
+        })
+        return true
+      } catch (error) {
+        return false
+      }
+    }
+    return false
+  },
+
+  deviceName: (value) => {
+    return value && value.length >= 1 && value.length <= 100
+  },
+
+  deviceType: (value) => {
+    return ['server', 'router', 'printer', 'switch'].includes(value)
+  }
+}
+
+// Handlers use wrapHandler() for consistent error formatting
+function wrapHandler(name, handler) {
+  return async (event, ...args) => {
+    try {
+      return await handler(event, ...args)
+    } catch (error) {
+      console.error(`Error ${name}:`, error)
+      return { success: false, error: error.message }
+    }
+  }
 }
 ```
 
 ### 3.3 Secure IPC Pattern
 
+`@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js`
+
 ```javascript
-// preload.js - Elite pattern: Channel whitelisting
+// Security: Whitelist of valid IPC channels
 const VALID_CHANNELS = [
+  // Device management
   'device:create',
-  'device:read', 
+  'device:read',
   'device:update',
   'device:delete',
+  'device:getWithStatus',
+  'device:getStatusSummary',
+  // Ping operations
   'ping:start',
   'ping:stop',
-  'ping:result'
-];
+  'ping:startAll',
+  'ping:stopAll',
+  'ping:status',
+  'ping:result',
+  'ping:record',
+  'ping:getRecent',
+  'ping:getStats',
+  // Outage operations
+  'outage:getActive',
+  'outage:getHistory',
+  'outage:configureThresholds',
+  // Historical aggregation (Sprint 4)
+  'history:uptime',
+  'history:latency',
+  'history:outages',
+  'history:summary',
+  'history:allSummaries',
+  // Database
+  'db:stats',
+  // Export
+  'export:csv',
+  'export:html',
+  'export:saveFile',
+  // Retention
+  'retention:getStats',
+  'retention:applyPolicy',
+  // Alert configuration
+  'alertConfig:get',
+  'alertConfig:getAll',
+  'alertConfig:create',
+  'alertConfig:update',
+  'alertConfig:delete',
+  // Alert events
+  'alert:create',
+  'alert:get',
+  'alert:getByDevice',
+  'alert:getActive',
+  'alert:acknowledge',
+  'alert:resolve',
+  'alert:resolveDevice'
+]
 
+// Expose named API methods (not generic invoke/on wrapper)
 contextBridge.exposeInMainWorld('electronAPI', {
-  invoke: (channel, ...args) => {
-    if (!VALID_CHANNELS.includes(channel)) {
-      console.warn(`Blocked IPC call to invalid channel: ${channel}`);
-      return Promise.reject(new Error('Invalid channel'));
-    }
-    return ipcRenderer.invoke(channel, ...args);
-  },
+  // Device management
+  createDevice: (deviceData) => ipcRenderer.invoke('device:create', deviceData),
+  getDevices: (id) => ipcRenderer.invoke('device:read', id),
+  updateDevice: (id, updates) => ipcRenderer.invoke('device:update', id, updates),
+  deleteDevice: (id) => ipcRenderer.invoke('device:delete', id),
   
-  on: (channel, callback) => {
-    if (!VALID_CHANNELS.includes(channel)) {
-      console.warn(`Blocked IPC listener on invalid channel: ${channel}`);
-      return;
+  // Ping monitoring
+  startPing: (deviceId, ipAddress, intervalMs) => 
+    ipcRenderer.invoke('ping:start', deviceId, ipAddress, intervalMs),
+  stopPing: (deviceId) => ipcRenderer.invoke('ping:stop', deviceId),
+  
+  // Event listeners with cleanup
+  onPingResult: (callback) => {
+    const wrappedCallback = (event, ...args) => callback(...args)
+    ipcRenderer.on('ping:result', wrappedCallback)
+    return () => {
+      ipcRenderer.removeListener('ping:result', wrappedCallback)
     }
-    
-    // Wrap callback to prevent exposing IPC internals
-    const wrappedCallback = (event, ...args) => callback(...args);
-    ipcRenderer.on(channel, wrappedCallback);
-    
-    // Return cleanup function
-    return () => ipcRenderer.removeListener(channel, wrappedCallback);
   }
-});
+})
+```
+
+**Add Device and Start Monitoring (Sequence Diagram):**
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant React as React Component
+    participant Preload as Preload Script
+    participant IPC as IPC Main Handler
+    participant NM as NetworkMonitor
+    participant Ping as PingService
+    participant DB as Database
+    participant BW as BrowserWindow
+
+    User->>React: Enter name & IP, click Add Device
+    React->>Preload: window.electronAPI.createDevice({name, ipAddress})
+    Preload->>IPC: ipcRenderer.invoke('device:create', data)
+    IPC->>IPC: Validate name, IP, deviceType
+    IPC->>DB: INSERT INTO devices
+    DB-->>IPC: deviceId
+    IPC->>DB: createAlertConfiguration(deviceId)
+    IPC-->>Preload: {success, data}
+    Preload-->>React: Update device list
+
+    User->>React: Click Start Monitoring
+    React->>Preload: window.electronAPI.startPing(deviceId, ipAddress, 5000)
+    Preload->>IPC: ipcRenderer.invoke('ping:start', ...)
+    IPC->>NM: networkMonitor.startMonitoring(id, ip, interval)
+    NM->>DB: getDevice(deviceId)
+    NM->>Ping: new PingService().start(deviceId, ip, interval, onResult)
+    loop Every 5 seconds
+        Ping->>Ping: ping.promise.probe(ipAddress)
+        Ping->>DB: db.recordPing(pingData)
+        Ping->>Ping: _handleOutage() / _resolveOutage()
+        Ping-->>NM: onResult(pingData)
+        NM->>NM: _handlePingResult(deviceId, pingData)
+        NM->>BW: win.webContents.send('ping:result', data)
+        BW->>Preload: ipcRenderer.on('ping:result')
+        Preload->>React: setPingResult(deviceId, result)
+    end
 ```
 
 ---
@@ -394,14 +665,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
 | Database connections | High | Singleton pattern + explicit close |
 | DOM references in refs | Low | React ref cleanup |
 
-**Elite Pattern: Resource Manager**
+**Recommended Pattern: Resource Manager (Not Currently Implemented)**
+
+The actual codebase cleans up resources manually in `useEffect` return functions. The pattern below is a recommended abstraction for future use.
+
 ```javascript
-// ResourceManager.js - Centralised cleanup
+// Recommended pattern: Centralised cleanup
 class ResourceManager {
   resources = new Map();
   
   register(id, cleanupFn) {
-    // Clean up existing resource with same ID
     if (this.resources.has(id)) {
       this.dispose(id);
     }
@@ -425,83 +698,79 @@ class ResourceManager {
   }
 }
 
-// React hook integration
-export const useResourceManager = () => {
-  const managerRef = useRef(new ResourceManager());
-  
-  useEffect(() => {
-    return () => managerRef.current.disposeAll();
-  }, []);
-  
-  return managerRef.current;
-};
-
-// Usage in component
-const PingComponent = ({ deviceId }) => {
-  const resources = useResourceManager();
-  
-  useEffect(() => {
-    const monitor = new PingMonitor(deviceId);
-    monitor.start();
-    
-    resources.register(`ping-${deviceId}`, () => monitor.stop());
-  }, [deviceId, resources]);
-  
-  return <div>Monitoring {deviceId}</div>;
-};
+// Actual pattern in codebase: manual cleanup in useEffect
+useEffect(() => {
+  const cleanup = window.electronAPI?.onPingResult((result) => {
+    useDeviceStore.getState().setPingResult(result.deviceId, result)
+  })
+  return () => { if (cleanup) cleanup() }
+}, [])
 ```
 
 ### 4.3 Database Connection Lifecycle
 
+`@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\db\database.js`
+
 ```javascript
-// Elite pattern: Connection pooling for SQLite
-class DatabasePool {
-  static instance = null;
-  connections = new Map();
-  maxConnections = 5;
+// Lazy-loaded better-sqlite3 (native module, must not be bundled)
+let Database = null
+async function getDatabaseClass() {
+  if (!Database) {
+    const module = await import('better-sqlite3')
+    Database = module.default
+  }
+  return Database
+}
+
+class DatabaseManager {
+  static instance = null
+  db = null
+  statements = new Map()
   
   static getInstance() {
-    if (!DatabasePool.instance) {
-      DatabasePool.instance = new DatabasePool();
+    if (!DatabaseManager.instance) {
+      DatabaseManager.instance = new DatabaseManager()
     }
-    return DatabasePool.instance;
+    return DatabaseManager.instance
   }
   
-  getConnection(dbName) {
-    if (this.connections.has(dbName)) {
-      return this.connections.get(dbName);
+  async initialise() {
+    if (this.db) return
+    
+    const DatabaseClass = await getDatabaseClass()
+    const dbPath = path.join(app.getPath('userData'), 'network-monitor.sqlite')
+    
+    // Ensure directory exists
+    const dbDir = path.dirname(dbPath)
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true })
     }
     
-    if (this.connections.size >= this.maxConnections) {
-      // Close oldest connection
-      const [oldestName] = this.connections.entries().next().value;
-      this.closeConnection(oldestName);
-    }
+    // Create single persistent connection
+    this.db = new DatabaseClass(dbPath)
     
-    const db = new Database(dbName);
-    this.connections.set(dbName, db);
-    return db;
+    this.db.pragma('journal_mode = WAL')
+    this.db.pragma('foreign_keys = ON')
+    
+    this.initialiseSchema()
+    this.runMigrations()
   }
   
-  closeConnection(dbName) {
-    const db = this.connections.get(dbName);
-    if (db) {
-      db.close();
-      this.connections.delete(dbName);
+  // Prepared statement caching for performance
+  getStatement(name, sql) {
+    if (!this.statements.has(name)) {
+      this.statements.set(name, this.db.prepare(sql))
     }
-  }
-  
-  closeAll() {
-    this.connections.forEach(db => db.close());
-    this.connections.clear();
+    return this.statements.get(name)
   }
 }
 
-// App lifecycle management
-app.on('before-quit', () => {
-  DatabasePool.getInstance().closeAll();
-  pingService.disposeAll();
-});
+// Singleton export used across all services
+export async function getDatabase() {
+  const manager = DatabaseManager.getInstance()
+  await manager.initialise()
+  return manager
+}
 ```
 
 ---
@@ -538,121 +807,149 @@ app.on('before-quit', () => {
 ### 5.3 Test Patterns
 
 **Database Testing with In-Memory SQLite:**
+
+`@c:\Users\Greg\Desktop\Projects\network-device-monitor\tests\unit\database.test.js`
+
 ```javascript
-// __tests__/database.test.js
-import Database from 'better-sqlite3';
-import { initialiseSchema } from '../src/main/database';
+// Actual test file: uses dynamic import for better-sqlite3
+import { getDatabase } from '../../src/main/db/database.js'
 
 describe('Database Layer', () => {
-  let db;
+  let db
   
-  beforeEach(() => {
-    // Fresh database for each test
-    db = new Database(':memory:');
-    initialiseSchema(db);
-  });
+  beforeAll(async () => {
+    // Mock app.getPath to avoid filesystem dependency
+    jest.mock('electron', () => ({
+      app: { getPath: () => ':memory:' }
+    }))
+    db = await getDatabase()
+  })
   
   afterEach(() => {
-    db.close();
-  });
+    // Clean up between tests
+    db.db.exec('DELETE FROM ping_logs')
+    db.db.exec('DELETE FROM outages')
+    db.db.exec('DELETE FROM devices')
+  })
   
   it('should create device with valid data', () => {
-    const stmt = db.prepare('INSERT INTO devices (name, ip_address) VALUES (?, ?)');
-    const result = stmt.run('Test Router', '192.168.1.1');
+    const result = db.createDevice({
+      name: 'Test Router',
+      ipAddress: '192.168.1.1',
+      deviceType: 'router',
+      isActive: true
+    })
     
-    expect(result.changes).toBe(1);
-    expect(result.lastInsertRowid).toBeDefined();
-  });
+    expect(result.id).toBeDefined()
+    expect(result.name).toBe('Test Router')
+  })
   
-  it('should enforce unique IP constraint', () => {
-    const stmt = db.prepare('INSERT INTO devices (name, ip_address) VALUES (?, ?)');
-    stmt.run('Device 1', '192.168.1.1');
+  it('should enforce partial unique index on active devices', () => {
+    db.createDevice({ name: 'Device 1', ipAddress: '192.168.1.1', deviceType: 'server', isActive: true })
     
+    // Should throw for duplicate IP on active device
     expect(() => {
-      stmt.run('Device 2', '192.168.1.1');
-    }).toThrow('UNIQUE constraint failed');
-  });
+      db.createDevice({ name: 'Device 2', ipAddress: '192.168.1.1', deviceType: 'server', isActive: true })
+    }).toThrow(/UNIQUE constraint failed/)
+  })
   
   it('should cascade delete ping logs', () => {
-    // Setup device with pings
-    db.prepare('INSERT INTO devices (id, name, ip_address) VALUES (1, ?, ?)')
-      .run('Test', '192.168.1.1');
-    db.prepare('INSERT INTO ping_logs (device_id, latency_ms, success) VALUES (1, 10, 1)')
-      .run();
+    const device = db.createDevice({ name: 'Test', ipAddress: '192.168.1.2', deviceType: 'server', isActive: true })
+    db.recordPing({ deviceId: device.id, latencyMs: 10, success: true, packetLoss: false })
     
-    // Delete device
-    db.prepare('DELETE FROM devices WHERE id = 1').run();
+    db.deleteDevice(device.id)
     
-    // Verify cascade
-    const pings = db.prepare('SELECT COUNT(*) as count FROM ping_logs').get();
-    expect(pings.count).toBe(0);
-  });
-});
+    const pings = db.getRecentPings(device.id, 100)
+    expect(pings.length).toBe(0)
+  })
+})
 ```
 
 **IPC Handler Testing:**
-```javascript
-// __tests__/ipc-handlers.test.js
-import { ipcMain } from 'electron';
-import { registerIPCHandlers } from '../src/main/ipc-handlers';
 
-describe('IPC Handlers', () => {
-  beforeAll(() => {
-    registerIPCHandlers();
-  });
+`@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js:207`
+
+```javascript
+// Actual handler registration function
+export async function registerDatabaseHandlers() {
+  const db = await getDatabase()
   
-  it('should validate device creation input', async () => {
-    const invalidInputs = [
-      { name: '', ipAddress: '192.168.1.1' },  // Empty name
-      { name: 'Test', ipAddress: 'invalid' },  // Invalid IP
-      { name: 'Test', ipAddress: '256.1.1.1' }, // Out of range
-    ];
-    
-    for (const input of invalidInputs) {
-      await expect(
-        ipcMain.handle('device:create', input)
-      ).rejects.toThrow(ValidationError);
+  // Device creation with validation
+  ipcMain.handle('device:create', wrapHandler('creating device', async (event, data) => {
+    if (!validators.deviceName(data.name)) {
+      throw new Error('Invalid device name')
     }
-  });
-});
+    if (!(await validators.networkAddress(data.ipAddress))) {
+      throw new Error('Invalid network address')
+    }
+    
+    const existing = db.getDeviceByIp(data.ipAddress)
+    if (existing) {
+      throw new Error('Network address already exists')
+    }
+    
+    const result = db.createDevice(data)
+    db.createAlertConfiguration(result.id)
+    return { success: true, data: result }
+  }))
+  
+  // ... other handlers
+}
+
+// Test pattern: validate through the registered handler
+// ipcMain.handle registers a listener; invoke it via the preload bridge
+// or test the validation logic directly
 ```
 
 **React Component Testing:**
-```javascript
-// __tests__/DeviceCard.test.jsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { DeviceCard } from '../src/renderer/components/DeviceCard';
 
-describe('DeviceCard', () => {
+`@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\renderer\components\devices\DeviceStatusCard.jsx`
+
+```javascript
+// Actual component tests — DeviceStatusCard, not DeviceCard
+import { render, screen } from '@testing-library/react';
+import DeviceStatusCard from '../src/renderer/components/devices/DeviceStatusCard';
+
+describe('DeviceStatusCard', () => {
   const mockDevice = {
     id: 1,
     name: 'Test Router',
     ipAddress: '192.168.1.1',
-    status: 'online',
-    latency: 12
+    deviceType: 'router',
+    location: 'Server Room',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z'
   };
   
-  it('renders device information correctly', () => {
-    render(<DeviceCard device={mockDevice} />);
+  it('renders device name and IP', () => {
+    render(
+      <DeviceStatusCard
+        device={mockDevice}
+        latency={12}
+        status="excellent"
+        isOnline={true}
+        isMonitoring={true}
+        activeOutage={null}
+      />
+    );
     
     expect(screen.getByText('Test Router')).toBeInTheDocument();
     expect(screen.getByText('192.168.1.1')).toBeInTheDocument();
-    expect(screen.getByText('12ms')).toBeInTheDocument();
   });
   
-  it('displays correct status colour', () => {
-    const { container } = render(<DeviceCard device={mockDevice} />);
-    const statusIndicator = container.querySelector('.status-indicator');
+  it('shows offline state when not monitoring', () => {
+    render(
+      <DeviceStatusCard
+        device={mockDevice}
+        latency={null}
+        status="unknown"
+        isOnline={false}
+        isMonitoring={false}
+        activeOutage={null}
+      />
+    );
     
-    expect(statusIndicator).toHaveClass('status-online');
-  });
-  
-  it('calls onDelete when delete button clicked', () => {
-    const mockDelete = jest.fn();
-    render(<DeviceCard device={mockDevice} onDelete={mockDelete} />);
-    
-    fireEvent.click(screen.getByRole('button', { name: /delete/i }));
-    expect(mockDelete).toHaveBeenCalledWith(1);
+    expect(screen.getByText('Not Monitoring')).toBeInTheDocument();
   });
 });
 ```
@@ -660,31 +957,33 @@ describe('DeviceCard', () => {
 ### 5.4 Coverage Reporting
 
 ```javascript
-// jest.config.js - Coverage configuration
-module.exports = {
+// jest.config.js - Actual configuration
+export default {
+  testEnvironment: 'node',
+  moduleFileExtensions: ['js', 'mjs'],
+  testMatch: [
+    '**/tests/unit/**/*.test.js',
+    '**/tests/integration/**/*.test.js'
+  ],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^electron$': '<rootDir>/tests/mocks/electron.js',
+    '^ping$': '<rootDir>/tests/mocks/ping.js',
+    '^better-sqlite3$': '<rootDir>/tests/mocks/better-sqlite3.js'
+  },
+  transform: {},
   collectCoverageFrom: [
-    'src/**/*.{js,jsx}',
-    '!src/**/*.test.{js,jsx}',
-    '!src/main/index.js',  // Entry point
+    'src/**/*.js',
+    '!src/**/index.js',
     '!**/node_modules/**'
   ],
-  coverageThreshold: {
-    global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80
-    },
-    './src/main/database.js': {
-      branches: 90,
-      functions: 90,
-      lines: 90,
-      statements: 90
-    }
-  },
-  coverageReporters: ['text', 'text-summary', 'lcov', 'html'],
-  coverageDirectory: 'coverage'
-};
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  reporters: [
+    'default',
+    ['<rootDir>/scripts/test-summary-reporter.js', { outputFile: 'test-summary.txt' }]
+  ]
+}
 ```
 
 ---
@@ -732,7 +1031,6 @@ Refs: #123
 | feat | New feature | `feat(ping): add concurrent monitoring` |
 | fix | Bug fix | `fix(database): handle connection timeout` |
 | docs | Documentation | `docs(readme): update installation steps` |
-| style | Code style | `style(components): standardise indentation` |
 | refactor | Restructuring | `refactor(store): migrate to Zustand` |
 | test | Tests | `test(ping): add timeout scenario` |
 | chore | Maintenance | `chore(deps): update electron` |
@@ -802,19 +1100,16 @@ Brief description of changes
 
 ### 6.4 Git Hooks (Husky)
 
-```json
-// package.json
+```bash
+# Husky v9 configuration
+# .husky/commit-msg
+echo "npx --no -- commitlint --edit \$1" > .husky/commit-msg
+
+# package.json — lint-staged only (no pre-commit or pre-push hooks configured)
 {
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
-      "pre-push": "npm run test:unit"
-    }
-  },
   "lint-staged": {
-    "*.{js,jsx}": ["eslint --fix", "prettier --write", "git add"],
-    "*.md": ["prettier --write", "git add"]
+    "*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.md": ["prettier --write"]
   }
 }
 ```

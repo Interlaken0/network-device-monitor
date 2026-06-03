@@ -75,7 +75,9 @@ const VALID_CHANNELS = [
   'device:read',
   'device:update',
   'device:delete',
-  // Ping operations  
+  'device:getWithStatus',
+  'device:getStatusSummary',
+  // Ping operations
   'ping:start',
   'ping:stop',
   'ping:startAll',
@@ -85,8 +87,39 @@ const VALID_CHANNELS = [
   'ping:record',
   'ping:getRecent',
   'ping:getStats',
+  // Outage operations
+  'outage:getActive',
+  'outage:getHistory',
+  'outage:configureThresholds',
+  // Historical aggregation (Sprint 4)
+  'history:uptime',
+  'history:latency',
+  'history:outages',
+  'history:summary',
+  'history:allSummaries',
   // Database
-  'db:stats'
+  'db:stats',
+  // Export
+  'export:csv',
+  'export:html',
+  'export:saveFile',
+  // Retention
+  'retention:getStats',
+  'retention:applyPolicy',
+  // Alert configuration
+  'alertConfig:get',
+  'alertConfig:getAll',
+  'alertConfig:create',
+  'alertConfig:update',
+  'alertConfig:delete',
+  // Alert events
+  'alert:create',
+  'alert:get',
+  'alert:getByDevice',
+  'alert:getActive',
+  'alert:acknowledge',
+  'alert:resolve',
+  'alert:resolveDevice'
 ]
 ```
 
@@ -111,7 +144,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 })
 ```
 
-**Main Handler:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc-handlers.js:97-125`
+**Main Handler:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js:97-125`
 
 ```javascript
 ipcMain.handle('device:create', async (event, data) => {
@@ -147,11 +180,11 @@ ipcMain.handle('device:create', async (event, data) => {
 - Supports multiple arguments
 - Returns structured response objects with `success`, `data`, and `error` fields
 
-### Pattern 2: Event-Based (on/send) — Prepared but Not Implemented
+### Pattern 2: Event-Based (on/send) — Active for Real-Time Ping Results
 
-The infrastructure for real-time ping results exists but is not yet wired to send IPC events.
+Real-time ping results are broadcast from the main process to all renderer windows. The renderer subscribes via the preload bridge.
 
-**Preload Bridge (prepared):** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:51-66`
+**Preload Bridge:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:123-138`
 
 ```javascript
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -175,22 +208,35 @@ contextBridge.exposeInMainWorld('electronAPI', {
 })
 ```
 
-**Current State:**
-
-- `ping:result` channel is whitelisted in `VALID_CHANNELS`
-- `onPingResult` is exposed in preload
-- NetworkMonitor has `onDeviceStatusChange` and `onAggregateStatus` callbacks `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\network-monitor.js:17-18`
-- **Missing:** Callbacks are not assigned to send `webContents.send('ping:result', ...)` events
-
-**To Implement:** Assign callbacks in `registerDatabaseHandlers()` to broadcast events:
+**Broadcast from Main Process:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\services\network-monitor.js:181-189`
 
 ```javascript
-// In ipc-handlers.js, add after handlers registration:
-networkMonitor.onDeviceStatusChange = (deviceId, status) => {
-  BrowserWindow.getAllWindows().forEach(win => {
-    win.webContents.send('ping:result', { deviceId, ...status })
+_handlePingResult(deviceId, pingData) {
+  // Broadcast to renderer process
+  const windows = BrowserWindow.getAllWindows()
+  windows.forEach(win => {
+    win.webContents.send('ping:result', {
+      deviceId,
+      ...pingData
+    })
   })
 }
+```
+
+**Renderer Subscription:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\renderer\App.jsx:55-66`
+
+```javascript
+useEffect(() => {
+  const cleanup = window.electronAPI?.onPingResult((result) => {
+    if (result && result.deviceId) {
+      useDeviceStore.getState().setPingResult(result.deviceId, result)
+    }
+  })
+
+  return () => {
+    if (cleanup) cleanup()
+  }
+}, [])
 ```
 
 **Key Characteristics:**
@@ -202,7 +248,7 @@ networkMonitor.onDeviceStatusChange = (deviceId, status) => {
 
 ### Input Validation Layer
 
-All user-facing inputs are validated in `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc-handlers.js:15-29`:
+All user-facing inputs are validated in `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js:15-29`:
 
 ```javascript
 const validators = {
@@ -237,7 +283,7 @@ const validators = {
 
 ### Structured Error Responses
 
-All handlers return consistent response objects `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc-handlers.js:121-124`:
+All handlers return consistent response objects `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js:121-124`:
 
 ```javascript
 return { 
@@ -292,7 +338,7 @@ cleanup()  // Removes the listener
 
 **Implementation:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:51-59`
 
-The cleanup function uses `ipcRenderer.removeListener` with the same callback reference. Currently, the application uses request-response patterns exclusively; event-based patterns are prepared but not active.
+The cleanup function uses `ipcRenderer.removeListener` with the same callback reference. The application uses both request-response patterns (invoke/handle) for device CRUD and control commands, and event-based patterns (on/send) for real-time ping results broadcast from main to renderer.
 
 ## Security Best Practices Summary
 
@@ -300,18 +346,18 @@ The cleanup function uses `ipcRenderer.removeListener` with the same callback re
 |----------|---------------------------|---------|
 | Context Isolation | `src/main/index.js:34` | Prevents renderer from accessing Node.js APIs |
 | Channel Whitelisting | `src/preload/index.js:9-27` | Restricts IPC to defined channels only |
-| Input Validation | `src/main/ipc-handlers.js:15-29` | Validates all inputs in trusted main process |
-| Error Sanitisation | `src/main/ipc-handlers.js:121-124` | Prevents information leakage to renderer |
+| Input Validation | `src/main/ipc/handlers.js:15-29` | Validates all inputs in trusted main process |
+| Error Sanitisation | `src/main/ipc/handlers.js:121-124` | Prevents information leakage to renderer |
 | Structured Responses | All handlers return `{success, data/error}` | Consistent error handling across all IPC |
 | Cleanup Functions | `src/preload/index.js:55-58` | Prevents memory leaks from listeners |
 
 ## References
 
-- **IPC Handlers:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc-handlers.js`
+- **IPC Handlers:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js`
 - **Preload Bridge:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js`
 - **Main Process:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\index.js`
-- **Network Monitor:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\network-monitor.js`
-- **Ping Service:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ping-service.js`
+- **Network Monitor:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\services\network-monitor.js`
+- **Ping Service:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\services\ping-service.js`
 
 ---
 

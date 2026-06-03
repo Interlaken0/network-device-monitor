@@ -42,7 +42,21 @@ const VALID_CHANNELS = [
   'export:saveFile',
   // Retention
   'retention:getStats',
-  'retention:applyPolicy'
+  'retention:applyPolicy',
+  // Alert configuration
+  'alertConfig:get',
+  'alertConfig:getAll',
+  'alertConfig:create',
+  'alertConfig:update',
+  'alertConfig:delete',
+  // Alert events
+  'alert:create',
+  'alert:get',
+  'alert:getByDevice',
+  'alert:getActive',
+  'alert:acknowledge',
+  'alert:resolve',
+  'alert:resolveDevice'
 ]
 
 // --------- Expose API to Renderer Process ---------
@@ -88,7 +102,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getActiveOutage: (deviceId) => ipcRenderer.invoke('outage:getActive', deviceId),
   getOutageHistory: (deviceId, hours) => ipcRenderer.invoke('outage:getHistory', deviceId, hours),
   configureOutageThresholds: (deviceId, thresholds) => ipcRenderer.invoke('outage:configureThresholds', deviceId, thresholds),
-  
+
+  // Alert configuration operations
+  getAlertConfig: (deviceId) => ipcRenderer.invoke('alertConfig:get', deviceId),
+  getAllAlertConfigs: () => ipcRenderer.invoke('alertConfig:getAll'),
+  createAlertConfig: (deviceId) => ipcRenderer.invoke('alertConfig:create', deviceId),
+  updateAlertConfig: (deviceId, updates) => ipcRenderer.invoke('alertConfig:update', deviceId, updates),
+  deleteAlertConfig: (deviceId) => ipcRenderer.invoke('alertConfig:delete', deviceId),
+
+  // Alert event operations
+  createAlert: (alertData) => ipcRenderer.invoke('alert:create', alertData),
+  getAlert: (alertId) => ipcRenderer.invoke('alert:get', alertId),
+  getAlertsByDevice: (deviceId, status, limit) => ipcRenderer.invoke('alert:getByDevice', deviceId, status, limit),
+  getActiveAlerts: () => ipcRenderer.invoke('alert:getActive'),
+  acknowledgeAlert: (alertId) => ipcRenderer.invoke('alert:acknowledge', alertId),
+  resolveAlert: (alertId) => ipcRenderer.invoke('alert:resolve', alertId),
+  resolveDeviceAlerts: (deviceId) => ipcRenderer.invoke('alert:resolveDevice', deviceId),
+
   // Event listeners with cleanup
   onPingResult: (callback) => {
     const wrappedCallback = (event, ...args) => callback(...args)
