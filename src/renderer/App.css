@@ -2288,3 +2288,142 @@ input:focus-visible {
 .general-error {
   margin: 0.5rem 0 0 0;
 }
+
+/* ========== Sprint 5 Week 2: Active Alerts Styles ========== */
+
+.active-alerts {
+  margin-top: 1.5rem;
+}
+
+.active-alerts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.active-alerts-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.active-alerts-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alert-count-badge {
+  background: var(--accent-danger);
+  color: white;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.refresh-alerts-btn {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.refresh-alerts-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--accent-primary);
+}
+
+.alert-error-banner {
+  background: var(--accent-danger);
+  color: white;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.alert-item {
+  background: var(--bg-card);
+  border-radius: 6px;
+  padding: 0.75rem;
+  border-left: 4px solid var(--border-color);
+  transition: background 0.2s ease;
+}
+
+.alert-item:hover {
+  background: var(--bg-hover);
+}
+
+.alert-item.alert-critical {
+  border-left-color: var(--accent-danger);
+}
+
+.alert-item.alert-warning {
+  border-left-color: var(--accent-warning);
+}
+
+.alert-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.alert-severity-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: white;
+}
+
+.alert-type {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.alert-time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.alert-item-body {
+  margin-bottom: 0.5rem;
+}
+
+.alert-message {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.alert-device {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.alert-item-footer {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.alert-threshold,
+.alert-actual {
+  font-variant-numeric: tabular-nums;
+}

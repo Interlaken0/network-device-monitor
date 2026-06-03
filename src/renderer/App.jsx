@@ -5,6 +5,7 @@ import HistoricalAnalysis from './components/analysis/HistoricalAnalysis'
 import OutageAnalysis from './components/analysis/OutageAnalysis'
 import ExportManager from './components/export/ExportManager'
 import AlertConfiguration from './components/alerts/AlertConfiguration'
+import ActiveAlerts from './components/alerts/ActiveAlerts'
 import ToastNotifications from './components/alerts/ToastNotifications'
 import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
 import { useThemeStore, selectTheme, selectToggleTheme } from './stores/themeStore'
@@ -309,6 +310,9 @@ function App() {
         )}
       </main>
       
+      {/* Active Alerts Panel (Sprint 5 Week 2) */}
+      <ActiveAlerts />
+
       {/* Toast Notifications */}
       <ToastNotifications />
     </div>
