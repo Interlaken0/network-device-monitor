@@ -1175,6 +1175,48 @@ class DatabaseManager {
   }
 
   /**
+   * Get all alerts with optional status filter
+   * @param {string} [status=null] - Optional status filter
+   * @param {number} [limit=100] - Maximum results
+   * @returns {Array} List of alerts
+   */
+  getAllAlerts(status = null, limit = 100) {
+    let sql = `
+      SELECT a.*, d.name as device_name, d.ip_address
+      FROM alerts a
+      JOIN devices d ON a.device_id = d.id
+    `
+    const params = []
+
+    if (status) {
+      sql += ' WHERE a.status = ?'
+      params.push(status)
+    }
+
+    sql += ' ORDER BY a.created_at DESC LIMIT ?'
+    params.push(limit)
+
+    const stmt = this.getStatement('getAllAlerts_' + (status || 'all'), sql)
+    const alerts = stmt.all(...params)
+
+    return alerts.map(alert => ({
+      id: alert.id,
+      deviceId: alert.device_id,
+      deviceName: alert.device_name,
+      ipAddress: alert.ip_address,
+      alertType: alert.alert_type,
+      severity: alert.severity,
+      status: alert.status,
+      message: alert.message,
+      thresholdValue: alert.threshold_value,
+      actualValue: alert.actual_value,
+      createdAt: alert.created_at,
+      acknowledgedAt: alert.acknowledged_at,
+      resolvedAt: alert.resolved_at
+    }))
+  }
+
+  /**
    * Acknowledge an alert
    * @param {number} alertId - Alert ID
    * @returns {Object} Updated alert

@@ -1,60 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import PropTypes from 'prop-types'
+import {
+  SEVERITY_CONFIG,
+  ALERT_TYPE_LABELS,
+  STATUS_LABELS,
+  formatAlertTime
+} from './alert-utils'
 
-/**
- * Severity colour configuration for alert display.
- * @constant {Object}
- */
-const SEVERITY_CONFIG = {
-  critical: {
-    className: 'alert-critical',
-    label: 'Critical',
-    colour: '#dc3545'
-  },
-  warning: {
-    className: 'alert-warning',
-    label: 'Warning',
-    colour: '#ffc107'
-  }
-}
-
-/**
- * Alert type display labels.
- * @constant {Object}
- */
-const ALERT_TYPE_LABELS = {
-  latency: 'Latency',
-  consecutive_failures: 'Consecutive Failures',
-  packet_loss: 'Packet Loss'
-}
-
-/**
- * Formats an ISO timestamp for display.
- *
- * @param {string} timestamp - ISO timestamp
- * @returns {string} Formatted date/time string
- */
-function formatAlertTime(timestamp) {
-  if (!timestamp) return 'Unknown'
-  const date = new Date(timestamp)
-  return date.toLocaleString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
 
 /**
  * Individual alert item component.
  *
  * @param {Object} props
  * @param {Object} props.alert - Alert data object
+ * @param {Function} props.onAcknowledge - Callback to acknowledge alert
+ * @param {Function} props.onResolve - Callback to resolve alert
+ * @param {string|null} props.actionLoading - Current action loading state
  */
-function AlertItem({ alert }) {
+function AlertItem({ alert, onAcknowledge, onResolve, actionLoading }) {
   const config = SEVERITY_CONFIG[alert.severity] || SEVERITY_CONFIG.warning
   const typeLabel = ALERT_TYPE_LABELS[alert.alertType] || alert.alertType
+  const statusLabel = STATUS_LABELS[alert.status] || alert.status
+  const isAckLoading = actionLoading === `ack-${alert.id}`
+  const isResLoading = actionLoading === `res-${alert.id}`
+  const isAcknowledged = alert.status === 'acknowledged'
 
   return (
     <div
@@ -70,6 +39,7 @@ function AlertItem({ alert }) {
           {config.label}
         </span>
         <span className="alert-type">{typeLabel}</span>
+        <span className="alert-status">{statusLabel}</span>
         <span className="alert-time">{formatAlertTime(alert.createdAt)}</span>
       </div>
       <div className="alert-item-body">
@@ -88,6 +58,28 @@ function AlertItem({ alert }) {
           {alert.alertType === 'packet_loss' && '%'}
         </span>
       </div>
+      <div className="alert-item-actions">
+        {!isAcknowledged && (
+          <button
+            type="button"
+            className="btn-acknowledge"
+            onClick={() => onAcknowledge(alert.id)}
+            disabled={isAckLoading || isResLoading}
+            aria-label={`Acknowledge alert for ${alert.deviceName}`}
+          >
+            {isAckLoading ? 'Acknowledging...' : 'Acknowledge'}
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn-resolve"
+          onClick={() => onResolve(alert.id)}
+          disabled={isAckLoading || isResLoading}
+          aria-label={`Resolve alert for ${alert.deviceName}`}
+        >
+          {isResLoading ? 'Resolving...' : 'Resolve'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -100,11 +92,15 @@ AlertItem.propTypes = {
     ipAddress: PropTypes.string.isRequired,
     alertType: PropTypes.string.isRequired,
     severity: PropTypes.string.isRequired,
+    status: PropTypes.string.isRequired,
     message: PropTypes.string.isRequired,
-    thresholdValue: PropTypes.number.isRequired,
-    actualValue: PropTypes.number.isRequired,
+    thresholdValue: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    actualValue: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
     createdAt: PropTypes.string.isRequired
-  }).isRequired
+  }).isRequired,
+  onAcknowledge: PropTypes.func.isRequired,
+  onResolve: PropTypes.func.isRequired,
+  actionLoading: PropTypes.string
 }
 
 /**
@@ -117,6 +113,7 @@ function ActiveAlerts() {
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [actionLoading, setActionLoading] = useState(null)
 
   /**
    * Fetch active alerts from the main process.
@@ -144,6 +141,44 @@ function ActiveAlerts() {
   // Load alerts on mount
   useEffect(() => {
     loadAlerts()
+  }, [loadAlerts])
+
+  /**
+   * Acknowledge a single alert.
+   */
+  const handleAcknowledge = useCallback(async (alertId) => {
+    setActionLoading(`ack-${alertId}`)
+    try {
+      const result = await window.electronAPI?.acknowledgeAlert(alertId)
+      if (result?.success) {
+        await loadAlerts()
+      } else {
+        setError(result?.error || 'Failed to acknowledge alert')
+      }
+    } catch (err) {
+      setError(err.message || 'Error acknowledging alert')
+    } finally {
+      setActionLoading(null)
+    }
+  }, [loadAlerts])
+
+  /**
+   * Resolve a single alert.
+   */
+  const handleResolve = useCallback(async (alertId) => {
+    setActionLoading(`res-${alertId}`)
+    try {
+      const result = await window.electronAPI?.resolveAlert(alertId)
+      if (result?.success) {
+        await loadAlerts()
+      } else {
+        setError(result?.error || 'Failed to resolve alert')
+      }
+    } catch (err) {
+      setError(err.message || 'Error resolving alert')
+    } finally {
+      setActionLoading(null)
+    }
   }, [loadAlerts])
 
   const alertCount = alerts.length
@@ -191,7 +226,13 @@ function ActiveAlerts() {
       {alerts.length > 0 && (
         <div className="alert-list" role="list" aria-label="Active alert list">
           {alerts.map((alert) => (
-            <AlertItem key={alert.id} alert={alert} />
+            <AlertItem
+              key={alert.id}
+              alert={alert}
+              onAcknowledge={handleAcknowledge}
+              onResolve={handleResolve}
+              actionLoading={actionLoading}
+            />
           ))}
         </div>
       )}

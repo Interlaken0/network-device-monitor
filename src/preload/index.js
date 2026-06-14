@@ -54,9 +54,12 @@ const VALID_CHANNELS = [
   'alert:get',
   'alert:getByDevice',
   'alert:getActive',
+  'alert:getAll',
   'alert:acknowledge',
   'alert:resolve',
-  'alert:resolveDevice'
+  'alert:resolveDevice',
+  // Alert real-time broadcast
+  'alert:event'
 ]
 
 // --------- Expose API to Renderer Process ---------
@@ -115,6 +118,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAlert: (alertId) => ipcRenderer.invoke('alert:get', alertId),
   getAlertsByDevice: (deviceId, status, limit) => ipcRenderer.invoke('alert:getByDevice', deviceId, status, limit),
   getActiveAlerts: () => ipcRenderer.invoke('alert:getActive'),
+  getAllAlerts: (status, limit) => ipcRenderer.invoke('alert:getAll', status, limit),
   acknowledgeAlert: (alertId) => ipcRenderer.invoke('alert:acknowledge', alertId),
   resolveAlert: (alertId) => ipcRenderer.invoke('alert:resolve', alertId),
   resolveDeviceAlerts: (deviceId) => ipcRenderer.invoke('alert:resolveDevice', deviceId),
@@ -130,6 +134,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
   
+  // Alert event listener with cleanup
+  onAlertEvent: (callback) => {
+    const wrappedCallback = (event, ...args) => callback(...args)
+    ipcRenderer.on('alert:event', wrappedCallback)
+    return () => { ipcRenderer.removeListener('alert:event', wrappedCallback) }
+  },
+
   // Remove listener helper
   removeListener: (channel, callback) => {
     if (VALID_CHANNELS.includes(channel)) {

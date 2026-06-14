@@ -6,6 +6,7 @@ import OutageAnalysis from './components/analysis/OutageAnalysis'
 import ExportManager from './components/export/ExportManager'
 import AlertConfiguration from './components/alerts/AlertConfiguration'
 import ActiveAlerts from './components/alerts/ActiveAlerts'
+import AlertHistory from './components/alerts/AlertHistory'
 import ToastNotifications from './components/alerts/ToastNotifications'
 import { useDeviceStore, selectDevices, selectError, selectPingResults, selectIsMonitoring, selectEditingDevice, selectEditForm, selectDeleteModal, selectNewDeviceForm } from './stores/deviceStore'
 import { useThemeStore, selectTheme, selectToggleTheme } from './stores/themeStore'
@@ -58,6 +59,34 @@ function App() {
       if (result && result.deviceId) {
         // Use getState() for stable action reference (no closure issues)
         useDeviceStore.getState().setPingResult(result.deviceId, result)
+      }
+    })
+
+    return () => {
+      if (cleanup) cleanup()
+    }
+  }, [])
+
+  // Sprint 5 Week 2: Listen for real-time alert events from main process
+  useEffect(() => {
+    const cleanup = window.electronAPI?.onAlertEvent?.((event) => {
+      if (event?.eventType === 'created' && event?.alert) {
+        const alert = event.alert
+        // Import toast store dynamically to avoid circular dependency at module level
+        import('./components/alerts/ToastNotifications').then((module) => {
+          const useToastStore = module.useToastStore
+          if (useToastStore) {
+            const severity = alert.severity === 'critical' ? 'outage' : 'warning'
+            useToastStore.getState().addNotification({
+              id: `alert-${alert.id}`,
+              type: severity,
+              title: `${alert.severity === 'critical' ? 'Critical' : 'Warning'}: ${alert.deviceName || 'Device'}`,
+              message: alert.message,
+              device: { id: alert.deviceId, name: alert.deviceName || 'Unknown' },
+              duration: alert.severity === 'critical' ? 0 : 6000
+            })
+          }
+        })
       }
     })
 
@@ -312,6 +341,9 @@ function App() {
       
       {/* Active Alerts Panel (Sprint 5 Week 2) */}
       <ActiveAlerts />
+
+      {/* Alert History Panel (Sprint 5 Week 2) */}
+      <AlertHistory />
 
       {/* Toast Notifications */}
       <ToastNotifications />
