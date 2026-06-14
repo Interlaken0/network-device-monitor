@@ -524,6 +524,11 @@ export async function registerDatabaseHandlers() {
     return { success: true, data: alerts }
   }))
 
+  ipcMain.handle('alert:getAll', wrapHandler('getting all alerts', async (event, status, limit) => {
+    const alerts = db.getAllAlerts(status || null, limit || 100)
+    return { success: true, data: alerts }
+  }))
+
   ipcMain.handle('alert:acknowledge', wrapHandler('acknowledging alert', async (event, alertId) => {
     if (!alertId) {
       return { success: false, error: 'Alert ID is required' }

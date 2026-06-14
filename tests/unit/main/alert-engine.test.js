@@ -20,6 +20,12 @@ function createMockDb(overrides = {}) {
   }
 }
 
+jest.unstable_mockModule('electron', () => ({
+  BrowserWindow: {
+    getAllWindows: jest.fn(() => [])
+  }
+}))
+
 jest.unstable_mockModule('../../../src/main/db/database.js', () => ({
   getDatabase: jest.fn()
 }))

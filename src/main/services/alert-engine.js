@@ -1,4 +1,5 @@
 import { getDatabase } from '../db/database.js'
+import { BrowserWindow } from 'electron'
 
 /**
  * AlertEngine - Per-device threshold monitoring and alert generation
@@ -6,6 +7,7 @@ import { getDatabase } from '../db/database.js'
  * Loads alert configurations from the database, compares live ping metrics
  * against thresholds, and creates or resolves alerts accordingly.
  * Includes deduplication so repeated breaches do not spam the alert log.
+ * Broadcasts alert events to all renderer windows for real-time UI updates.
  *
  * @see docs/retrospectives/sprint-05-week1.md
  */
@@ -92,13 +94,34 @@ class AlertEngine {
       return
     }
 
-    db.createAlert({
+    const alert = db.createAlert({
       deviceId,
       alertType,
       severity,
       message,
       thresholdValue,
       actualValue
+    })
+
+    this._broadcastAlertEvent('created', alert)
+  }
+
+  /**
+   * Broadcast an alert event to all renderer windows.
+   *
+   * @private
+   * @param {string} eventType - 'created' | 'acknowledged' | 'resolved'
+   * @param {Object} alert - Alert data
+   */
+  _broadcastAlertEvent(eventType, alert) {
+    if (typeof BrowserWindow.getAllWindows !== 'function') return
+    const windows = BrowserWindow.getAllWindows()
+    windows.forEach((win) => {
+      try {
+        win.webContents.send('alert:event', { eventType, alert })
+      } catch (err) {
+        // Window may have been closed during iteration — safe to ignore
+      }
     })
   }
 

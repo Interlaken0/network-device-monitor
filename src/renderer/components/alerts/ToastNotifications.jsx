@@ -7,7 +7,7 @@ import { devtools } from 'zustand/middleware'
  * Toast notification store for managing real-time outage notifications.
  * Provides global state for notification queue and display logic.
  */
-const useToastStore = create(
+export const useToastStore = create(
   devtools(
     (set, get) => ({
       // Notification queue

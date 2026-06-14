@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.5.0](https://github.com/Interlaken0/network-device-monitor/compare/v0.4.0...v0.5.0) (2026-06-10)
+
+
+### Features
+
+* **alerts:** Sprint 5 Week 1 — Alerting Foundation with per-device thresholds, alert engine, and database layer ([#18](https://github.com/Interlaken0/network-device-monitor/issues/18)) ([15164c5](https://github.com/Interlaken0/network-device-monitor/commit/15164c5))
+* **renderer:** Add ActiveAlerts panel for live unresolved alert display ([0f9fc38](https://github.com/Interlaken0/network-device-monitor/commit/0f9fc38))
+* **alerts:** Complete Sprint 5 Week 2 — ToastNotifications, AlertHistory, alert-utils, and component tests ([1f51bee](https://github.com/Interlaken0/network-device-monitor/commit/1f51bee))
+
 ## [0.4.0](https://github.com/Interlaken0/network-device-monitor/compare/v0.3.0...v0.4.0) (2026-05-27)
 
 
