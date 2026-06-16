@@ -1,0 +1,8 @@
+node_modules/
+app/
+out/
+dist/
+dist-electron/
+build/
+coverage/
+*.log

@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, session } from 'electron'
+import { app, shell, BrowserWindow, session, autoUpdater } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // The built directory structure
 //
-// ├─┬─┬ out
+// ├─┬─┬ app
 // │ │ ├── main/index.js
 // │ │ ├── preload/index.js
 // │ │ └── renderer/index.html
@@ -15,8 +15,8 @@ process.env.APP_ROOT = path.join(__dirname, '../..')
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 // Fallback to default dev server port if env var not set
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'] || 'http://localhost:5173'
-export const MAIN_DIST = path.join(process.env.APP_ROOT, 'out/main')
-export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'out/renderer')
+export const MAIN_DIST = path.join(process.env.APP_ROOT, 'app/main')
+export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'app/renderer')
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   ? path.join(process.env.APP_ROOT, 'public')
@@ -120,6 +120,17 @@ app.whenReady().then(async () => {
   }
 
   createWindow()
+
+  // Sprint 6: Auto-updater stub — gracefully skips if no update server is configured
+  try {
+    if (process.env.NODE_ENV !== 'development') {
+      autoUpdater.checkForUpdatesAndNotify().catch(() => {
+        // Silently ignore update server unavailability
+      })
+    }
+  } catch {
+    // Auto-updater not available in this environment
+  }
 })
 
 // In this file you can include the rest of your app's specific main process
