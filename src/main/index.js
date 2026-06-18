@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, session, autoUpdater } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { spawnSync } from 'node:child_process'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -21,6 +22,39 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'app/renderer')
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   ? path.join(process.env.APP_ROOT, 'public')
   : RENDERER_DIST
+
+/**
+ * Handle Squirrel Windows installer events for shortcut creation and removal.
+ * Squirrel passes --squirrel-install, --squirrel-updated, --squirrel-uninstall,
+ * and --squirrel-obsolete as the first argument during setup lifecycle.
+ */
+function handleSquirrelEvent() {
+  if (process.platform !== 'win32') return false
+
+  const execPath = process.execPath
+  const updateExe = path.resolve(path.dirname(execPath), '..', 'Update.exe')
+  const exeName = path.basename(execPath)
+
+  const cmd = process.argv[1]
+  switch (cmd) {
+    case '--squirrel-install':
+    case '--squirrel-updated':
+      spawnSync(updateExe, ['--createShortcut', exeName], { detached: true })
+      return true
+    case '--squirrel-uninstall':
+      spawnSync(updateExe, ['--removeShortcut', exeName], { detached: true })
+      return true
+    case '--squirrel-obsolete':
+      return true
+    default:
+      return false
+  }
+}
+
+if (handleSquirrelEvent()) {
+  app.quit()
+  process.exit(0)
+}
 
 let win // BrowserWindow reference
 
