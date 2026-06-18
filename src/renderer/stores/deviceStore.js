@@ -39,7 +39,9 @@ export const useDeviceStore = create(
       historicalFilters: {
         dateRange: { start: '', end: '' },
         selectedDevices: [],
-        aggregationType: 'avg'
+        aggregationType: 'avg',
+        outageTimeRange: '24hr',
+        outageSeverityFilter: 'all'
       },
       historicalData: [],
       isLoadingHistorical: false,
@@ -109,7 +111,9 @@ export const useDeviceStore = create(
             historicalFilters: {
               dateRange: { start: '', end: '' },
               selectedDevices: [],
-              aggregationType: 'avg'
+              aggregationType: 'avg',
+              outageTimeRange: '24hr',
+              outageSeverityFilter: 'all'
             }
           },
           false,

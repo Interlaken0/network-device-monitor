@@ -135,8 +135,12 @@ OutageTooltip.propTypes = {
  * @param {boolean} props.showTitle - Whether to show the component title (default: true)
  */
 function OutageTimeline({ deviceId = null, deviceName = null, showTitle = true }) {
-  const [timeRange, setTimeRange] = useState('24hr')
-  const [severityFilter, setSeverityFilter] = useState('all')
+  // Sprint 6: Read outage filters from shared historicalFilters state
+  const historicalFilters = useDeviceStore((state) => state.historicalFilters)
+  const setHistoricalFilters = useDeviceStore((state) => state.setHistoricalFilters)
+  const timeRange = historicalFilters.outageTimeRange || '24hr'
+  const severityFilter = historicalFilters.outageSeverityFilter || 'all'
+
   const [now, setNow] = useState(Date.now())
 
   // Tick every minute so ongoing outage durations update live
@@ -237,7 +241,7 @@ function OutageTimeline({ deviceId = null, deviceName = null, showTitle = true }
                 key={key}
                 type="button"
                 className={`time-range-btn ${timeRange === key ? 'active' : ''}`}
-                onClick={() => setTimeRange(key)}
+                onClick={() => setHistoricalFilters({ outageTimeRange: key })}
                 aria-pressed={timeRange === key}
               >
                 {label}
@@ -250,7 +254,7 @@ function OutageTimeline({ deviceId = null, deviceName = null, showTitle = true }
             <button
               type="button"
               className={`severity-btn ${severityFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setSeverityFilter('all')}
+              onClick={() => setHistoricalFilters({ outageSeverityFilter: 'all' })}
               aria-pressed={severityFilter === 'all'}
             >
               All
@@ -260,7 +264,7 @@ function OutageTimeline({ deviceId = null, deviceName = null, showTitle = true }
                 key={severity}
                 type="button"
                 className={`severity-btn ${severityFilter === severity ? 'active' : ''}`}
-                onClick={() => setSeverityFilter(severity)}
+                onClick={() => setHistoricalFilters({ outageSeverityFilter: severity })}
                 aria-pressed={severityFilter === severity}
                 style={{ borderBottomColor: colour }}
               >

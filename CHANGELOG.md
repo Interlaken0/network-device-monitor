@@ -20,27 +20,20 @@ All notable changes to this project will be documented in this file. See [standa
 * **sprint4-week2:** drill-down outage modal, docs update, retrospective ([51623df](https://github.com/Interlaken0/network-device-monitor/commit/51623df21d694f9ef00bd5bfa6d2f1d99d7f9338))
 * **sprint4:** Week 2 — OutageAnalysis, ExportManager, security hardening, tests ([64f75b4](https://github.com/Interlaken0/network-device-monitor/commit/64f75b4c308283141f86098ed848f1d535ebbd01))
 
-### [0.2.2](https://github.com/Interlaken0/network-device-monitor/compare/v0.2.0...v0.2.2) (2026-05-13)
-
+## [0.3.0](https://github.com/Interlaken0/network-device-monitor/compare/v0.2.2...v0.3.0) (2026-05-13)
 
 ### Features
 
 * **sprint-3-week-2:** Add outage detection UI, theme polish, and security remediation ([#15](https://github.com/Interlaken0/network-device-monitor/issues/15)) ([76ff5b9](https://github.com/Interlaken0/network-device-monitor/commit/76ff5b90524814fbd489d229f9cd87f4320bac2e))
 
+## [0.2.2](https://github.com/Interlaken0/network-device-monitor/compare/v0.2.1...v0.2.2) (2026-05-13)
 
-### Bug Fixes
-
-* **changelog:** correct heading levels for all version entries ([11177ad](https://github.com/Interlaken0/network-device-monitor/commit/11177ad4a0f110e669b2a158b574e4755df40b94))
-* **changelog:** correct version hierarchy and remove duplicate entries ([4496acd](https://github.com/Interlaken0/network-device-monitor/commit/4496acddc88001b7f7878e8da36866e08ddd3ea8))
-
-### [0.2.1](https://github.com/Interlaken0/network-device-monitor/compare/v0.2.0...v0.2.1) (2026-05-13)
-
+## [0.2.1](https://github.com/Interlaken0/network-device-monitor/compare/v0.2.0...v0.2.1) (2026-05-13)
 
 ### Features
 
 * implement outage detection UI integration ([0766f00](https://github.com/Interlaken0/network-device-monitor/commit/0766f00a07bb644329f5804944ae66f93ea66c72))
 * implement theme system polish and visual enhancements ([0039538](https://github.com/Interlaken0/network-device-monitor/commit/00395385e649c27f30e8d31e3bc869acbe0ad5f5))
-
 
 ### Bug Fixes
 

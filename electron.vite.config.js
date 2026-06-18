@@ -6,7 +6,7 @@ export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
     build: {
-      outDir: 'out/main',
+      outDir: 'app/main',
       rollupOptions: {
         input: {
           index: path.resolve(__dirname, 'src/main/index.js')
@@ -23,7 +23,7 @@ export default defineConfig({
   preload: {
     plugins: [externalizeDepsPlugin()],
     build: {
-      outDir: 'out/preload',
+      outDir: 'app/preload',
       lib: {
         entry: path.resolve(__dirname, 'src/preload/index.js'),
         formats: ['cjs'],
@@ -34,7 +34,7 @@ export default defineConfig({
   renderer: {
     root: path.resolve(__dirname, 'src/renderer'),
     build: {
-      outDir: path.resolve(__dirname, 'out/renderer'),
+      outDir: path.resolve(__dirname, 'app/renderer'),
       rollupOptions: {
         input: {
           index: path.resolve(__dirname, 'src/renderer/index.html')
