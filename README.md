@@ -2,7 +2,7 @@
 
 A desktop application for real-time network infrastructure monitoring, built with Electron, React, and SQLite.
 
-**Sprint 4 Status:** Historical Analysis & Reporting Complete - Query builder, outage analysis, data export, and security hardening
+**Status:** Production-ready (v1.0.0) — Real-time monitoring, outage detection, historical analysis, data export, alerting, and Windows installer packaging complete.
 
 ---
 
@@ -102,10 +102,10 @@ This will:
 npm run build
 ```
 
-This creates the production bundles in the `out/` directory:
-- `out/main/` - Main process code
-- `out/preload/` - Preload script
-- `out/renderer/` - React frontend (generated on build)
+This creates the production bundles in the `app/` directory:
+- `app/main/` - Main process code
+- `app/preload/` - Preload script
+- `app/renderer/` - React frontend (generated on build)
 
 ### Package the app:
 ```bash
@@ -191,7 +191,7 @@ network-device-monitor/
 │   │   ├── sprint4-security.test.js
 │   │   └── validators.test.js
 │   └── mocks/                  # Test mocks
-├── out/                        # Build output (generated on first build)
+├── app/                        # Build output (generated on first build)
 ├── electron.vite.config.js     # Vite configuration
 ├── jest.config.js              # Jest test configuration
 └── package.json                # Dependencies & scripts
@@ -246,7 +246,7 @@ npx electron-rebuild -f -w better-sqlite3
 npm run build
 ```
 
-The preload script should output to `out/preload/index.cjs` (not `.mjs`).
+The preload script should output to `app/preload/index.cjs` (not `.mjs`).
 
 ### Issue: Database "not available" on startup
 
@@ -280,17 +280,32 @@ The preload script should output to `out/preload/index.cjs` (not `.mjs`).
 - **Export Manager** — Export ping logs and outages to CSV or HTML report templates (Uptime, Latency, Outage)
 - **Virtual scrolling** on large data tables for performance
 - **Security hardening** — Rate limiting on exports, input sanitisation, path traversal prevention
-- **451+ tests** across 16 test files covering all components and security utilities
+- **504 tests** across 22 test suites covering all components, security utilities, and alert components
 
 ---
 
-## Next Steps (Sprint 5 — Alerting & Notifications)
+### Sprint 5 — Alerting & Notifications
+- **Per-device alert threshold configuration** — latency, consecutive failures, packet loss
+- **Real-time alert engine** — state management (Triggered → Unacknowledged → Acknowledged → Resolved)
+- **Toast notifications** — critical alerts persist until dismissed
+- **Alert history log** — full audit trail with acknowledgement and resolution timestamps
+- **Active alerts panel** — real-time sidebar showing all unacknowledged alerts
 
-- [ ] Per-device alert threshold configuration (latency, consecutive failures, packet loss)
-- [ ] Real-time alert engine with state management (Triggered → Unacknowledged → Acknowledged → Resolved)
-- [ ] Toast notifications and alert counter badge
-- [ ] Alert history log with acknowledgement
-- [ ] Alert deduplication to prevent notification fatigue
+### Sprint 6 — Production Readiness
+- **Windows installer** — Squirrel.Windows setup.exe with Start Menu and Desktop shortcuts
+- **Auto-updater stub** — checks for updates on launch (server not configured)
+- **Security checklist** — full pre-release audit with documented findings
+- **SQL injection fix** — parameterised retention policy queries
+- **Build integrity** — source maps disabled, DevTools blocked in production
+- **User guide, deployment guide, and technical documentation** — complete
+
+---
+
+## Post-Release Maintenance
+
+- Upgrade Electron to v40+ to resolve ASAR integrity advisory
+- Evaluate removal of unused `sqlite3` and `sqlite` devDependencies
+- Obtain code-signing certificate for SmartScreen compatibility
 
 ---
 

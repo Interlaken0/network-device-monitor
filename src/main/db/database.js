@@ -1356,26 +1356,35 @@ class DatabaseManager {
    * @returns {Object} Purge statistics
    */
   applyPingHistoryRetention(retentionDays = 30) {
+    // Security: Validate input at the database layer (defence in depth)
+    if (!Number.isInteger(retentionDays) || retentionDays < 1 || retentionDays > 365) {
+      throw new Error('Invalid retention days: must be an integer between 1 and 365')
+    }
+
     try {
-      // Delete ping logs older than retention period
+      // Security: Compute cutoff date in JS and use parameterised query
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - retentionDays)
+      const cutoffIso = cutoffDate.toISOString()
+
       const deleteStmt = this.db.prepare(`
-        DELETE FROM ping_logs 
-        WHERE timestamp < datetime('now', '-${retentionDays} days')
+        DELETE FROM ping_logs
+        WHERE timestamp < ?
       `)
-      
-      const result = deleteStmt.run()
-      
+
+      const result = deleteStmt.run(cutoffIso)
+
       // Vacuum database to reclaim space
       this.db.exec('VACUUM')
-      
+
       console.log(`Purged ${result.changes} ping records older than ${retentionDays} days`)
-      
+
       return {
         deletedRecords: result.changes,
         retentionDays,
         timestamp: new Date().toISOString()
       }
-      
+
     } catch (error) {
       console.error('Error applying ping history retention:', error)
       throw new Error('Failed to apply retention policy')
@@ -1388,40 +1397,47 @@ class DatabaseManager {
    * @returns {Object} Statistics about records that would be purged
    */
   getRetentionPolicyStats(retentionDays = 30) {
+    // Security: Validate input at the database layer (defence in depth)
+    if (!Number.isInteger(retentionDays) || retentionDays < 1 || retentionDays > 365) {
+      throw new Error('Invalid retention days: must be an integer between 1 and 365')
+    }
+
     try {
-      // Count records older than retention period
+      // Security: Compute cutoff date in JS and use parameterised query
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - retentionDays)
+      const cutoffIso = cutoffDate.toISOString()
+
       const countStmt = this.db.prepare(`
-        SELECT COUNT(*) as count 
-        FROM ping_logs 
-        WHERE timestamp < datetime('now', '-${retentionDays} days')
+        SELECT COUNT(*) as count
+        FROM ping_logs
+        WHERE timestamp < ?
       `)
-      
-      const result = countStmt.get()
-      
-      // Get oldest record timestamp (included in size query below)
-      
+
+      const result = countStmt.get(cutoffIso)
+
       // Get total database size estimate
       const sizeStmt = this.db.prepare(`
-        SELECT 
+        SELECT
           COUNT(*) as total_records,
           MIN(timestamp) as oldest_record,
           MAX(timestamp) as newest_record
         FROM ping_logs
       `)
-      
+
       const size = sizeStmt.get()
-      
+
       return {
         recordsToPurge: result.count,
         totalRecords: size.total_records,
         oldestRecord: size.oldest_record,
         newestRecord: size.newest_record,
         retentionDays,
-        purgePercentage: size.total_records > 0 
-          ? Math.round((result.count / size.total_records) * 100) 
+        purgePercentage: size.total_records > 0
+          ? Math.round((result.count / size.total_records) * 100)
           : 0
       }
-      
+
     } catch (error) {
       console.error('Error getting retention policy stats:', error)
       throw new Error('Failed to get retention statistics')

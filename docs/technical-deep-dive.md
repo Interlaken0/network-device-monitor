@@ -559,9 +559,12 @@ const VALID_CHANNELS = [
   'alert:get',
   'alert:getByDevice',
   'alert:getActive',
+  'alert:getAll',
   'alert:acknowledge',
   'alert:resolve',
-  'alert:resolveDevice'
+  'alert:resolveDevice',
+  // Alert real-time broadcast
+  'alert:event'
 ]
 
 // Expose named API methods (not generic invoke/on wrapper)
@@ -1646,7 +1649,7 @@ This document serves as the technical companion to `AMF-Network-Monitor-Agile-St
 
 ---
 
-**Document Version:** 1.0  
-**Companion To:** AMF-Network-Monitor-Agile-Strategy.md  
-**Last Updated:** April 2026  
+**Document Version:** 2.0
+**Companion To:** AMF-Network-Monitor-Agile-Strategy.md
+**Last Updated:** 23 June 2026
 **Review Cycle:** Per Sprint

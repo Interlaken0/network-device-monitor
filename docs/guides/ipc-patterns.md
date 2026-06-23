@@ -49,7 +49,7 @@ The Network Device Monitor uses Electron's IPC system to enable communication be
 
 ### Context Isolation
 
-Context isolation is enforced in `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\index.js:32-35`:
+Context isolation is enforced in `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\index.js:66-73`:
 
 ```javascript
 webPreferences: {
@@ -66,7 +66,7 @@ webPreferences: {
 
 ### Channel Whitelisting
 
-All valid IPC channels are defined in `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:9-27`:
+All valid IPC channels are defined in `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:9-63`:
 
 ```javascript
 const VALID_CHANNELS = [
@@ -131,7 +131,7 @@ const VALID_CHANNELS = [
 
 Used for database operations and control commands. The renderer invokes a method; the main process handles it and returns a promise.
 
-**Preload Bridge:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:32-48`
+**Preload Bridge:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:65-150`
 
 ```javascript
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -144,7 +144,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 })
 ```
 
-**Main Handler:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js:97-125`
+**Main Handler:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\main\ipc\handlers.js:245-274`
 
 ```javascript
 ipcMain.handle('device:create', async (event, data) => {
@@ -184,7 +184,7 @@ ipcMain.handle('device:create', async (event, data) => {
 
 Real-time ping results are broadcast from the main process to all renderer windows. The renderer subscribes via the preload bridge.
 
-**Preload Bridge:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:123-138`
+**Preload Bridge:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:127-149`
 
 ```javascript
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -336,7 +336,7 @@ const cleanup = window.electronAPI.onPingResult((data) => {
 cleanup()  // Removes the listener
 ```
 
-**Implementation:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:51-59`
+**Implementation:** `@c:\Users\Greg\Desktop\Projects\network-device-monitor\src\preload\index.js:132-141`
 
 The cleanup function uses `ipcRenderer.removeListener` with the same callback reference. The application uses both request-response patterns (invoke/handle) for device CRUD and control commands, and event-based patterns (on/send) for real-time ping results broadcast from main to renderer.
 
@@ -344,12 +344,12 @@ The cleanup function uses `ipcRenderer.removeListener` with the same callback re
 
 | Practice | Implementation Location | Purpose |
 |----------|---------------------------|---------|
-| Context Isolation | `src/main/index.js:34` | Prevents renderer from accessing Node.js APIs |
-| Channel Whitelisting | `src/preload/index.js:9-27` | Restricts IPC to defined channels only |
-| Input Validation | `src/main/ipc/handlers.js:15-29` | Validates all inputs in trusted main process |
-| Error Sanitisation | `src/main/ipc/handlers.js:121-124` | Prevents information leakage to renderer |
+| Context Isolation | `src/main/index.js:68` | Prevents renderer from accessing Node.js APIs |
+| Channel Whitelisting | `src/preload/index.js:9-63` | Restricts IPC to defined channels only |
+| Input Validation | `src/main/ipc/handlers.js:141-202` | Validates all inputs in trusted main process |
+| Error Sanitisation | `src/main/ipc/handlers.js:129-138` | Prevents information leakage to renderer |
 | Structured Responses | All handlers return `{success, data/error}` | Consistent error handling across all IPC |
-| Cleanup Functions | `src/preload/index.js:55-58` | Prevents memory leaks from listeners |
+| Cleanup Functions | `src/preload/index.js:132-141` | Prevents memory leaks from listeners |
 
 ## References
 

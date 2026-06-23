@@ -93,6 +93,18 @@ function createWindow() {
   win.once('ready-to-show', () => {
     win.show()
     win.focus()
+
+    // Security: Disable DevTools in production
+    if (!VITE_DEV_SERVER_URL) {
+      win.webContents.closeDevTools()
+    }
+  })
+
+  // Security: Prevent DevTools from opening in production
+  win.webContents.on('devtools-opened', () => {
+    if (!VITE_DEV_SERVER_URL) {
+      win.webContents.closeDevTools()
+    }
   })
 
   if (VITE_DEV_SERVER_URL) {
