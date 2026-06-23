@@ -49,6 +49,20 @@ Use the moon / sun button in the top-right corner to switch between dark and lig
 
 ## Adding a device
 
+```mermaid
+flowchart LR
+    A[Click Add Device] --> B[Enter Name]
+    B --> C[Enter Network Address]
+    C --> D{Valid Address?}
+    D -->|No| E[Show Error]
+    E --> C
+    D -->|Yes| F[Save to Database]
+    F --> G[Device Appears in List]
+
+    style A fill:#e8f5e9
+    style G fill:#e1f5fe
+```
+
 1. Scroll down to the **Add Device** card.
 2. Enter a friendly **Name** — for example, `Main Router` or `Floor-2 Printer`.
 3. Enter the **Network Address**. This can be:

@@ -302,7 +302,7 @@ flowchart TD
     T --> G
     Q --> S
     T --> U{User Clicks Stop?}
-    U -->|Yes| V[AbortController.stop]
+    U -->|Yes| V[AbortController.abort]
     U -->|No| G
 ```
 

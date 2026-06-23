@@ -23,6 +23,44 @@
 
 ---
 
+## Security Architecture Overview
+
+```mermaid
+flowchart TB
+    subgraph Renderer["Renderer Process (Untrusted)"]
+        R[React UI]
+        R -->|window.electronAPI.*| P
+    end
+
+    subgraph Preload["Preload Script (Trusted Bridge)"]
+        P["electronAPI Bridge"]
+        P -->|ipcRenderer.invoke / .on| I
+    end
+
+    subgraph Main["Main Process (Trusted)"]
+        I[IPC Handlers]
+        V[Input Validation]
+        D[(Database)]
+        I --> V
+        V --> D
+    end
+
+    subgraph Security["Security Layers"]
+        CSP[Content Security Policy]
+        CI[Context Isolation]
+        SB[Sandbox]
+    end
+
+    Main --> Security
+
+    style Renderer fill:#ffebee
+    style Preload fill:#fff3e0
+    style Main fill:#e8f5e9
+    style Security fill:#e3f2fd
+```
+
+---
+
 ## Section 1: Electron Security Configuration
 
 ### 1.1 BrowserWindow Security

@@ -12,37 +12,35 @@ The Network Device Monitor uses Electron's IPC system to enable communication be
 
 ### Process Separation
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         Main Process                        │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │                 IPC Handlers (main)                 │    │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌───────────┐  │    │
-│  │  │ Device CRUD  │  │ Ping Control │  │ Database  │  │    │
-│  │  │  Handlers    │  │   Handlers   │  │  Queries  │  │    │
-│  │  └──────────────┘  └──────────────┘  └───────────┘  │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                          ↑↓ ipcMain                         │
-│                    Secure IPC Bridge                        │
-│                          ↑↓ contextBridge                   │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │               Preload Script Bridge                 │    │
-│  │         (src/preload/index.js)                      │    │
-│  │                                                     │    │
-│  │   ┌─────────────────────────────────────────────┐   │    │
-│  │   │         VALID_CHANNELS Whitelist            │   │    │
-│  │   │  ['device:create', 'device:read', ...]      │   │    │
-│  │   └─────────────────────────────────────────────┘   │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                          ↑↓ ipcRenderer                     │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │               Renderer Process                      │    │
-│  │         (Frontend UI - React/Vue)                   │    │
-│  │                                                     │    │
-│  │   window.electronAPI.createDevice(data)             │    │
-│  │   window.electronAPI.getPingStatus(deviceId)        │    │
-│  └─────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Main["Main Process (Node.js)"]
+        H[IPC Handlers]
+        D[Device CRUD]
+        P[Ping Control]
+        DB[(Database)]
+        H --> D
+        H --> P
+        D --> DB
+        P --> DB
+    end
+
+    subgraph Preload["Preload Script Bridge"]
+        E["electronAPI\n(createDevice, startPing...)"]
+    end
+
+    subgraph Renderer["Renderer Process (React UI)"]
+        UI["User Interface\n(window.electronAPI.*)"]
+    end
+
+    UI -->|"window.electronAPI.createDevice(data)"| E
+    E -->|"ipcRenderer.invoke('device:create', data)"| H
+    H -->|"Promise<{success, data}>"| E
+    E -->|"Promise resolves"| UI
+
+    style Main fill:#e1f5fe
+    style Preload fill:#fff3e0
+    style Renderer fill:#e8f5e9
 ```
 
 ## Security Configuration
@@ -172,6 +170,33 @@ ipcMain.handle('device:create', async (event, data) => {
     return { success: false, error: error.message }
   }
 })
+```
+
+**Sequence Diagram:**
+
+```mermaid
+sequenceDiagram
+    participant R as Renderer (React)
+    participant P as Preload Script
+    participant M as Main Process
+    participant D as Database
+
+    R->>P: window.electronAPI.createDevice({name, ipAddress})
+    P->>M: ipcRenderer.invoke('device:create', data)
+    M->>M: validators.deviceName(data.name)
+    M->>M: validators.networkAddress(data.ipAddress)
+    M->>D: db.getDeviceByIp(ipAddress)
+    D-->>M: null (no duplicate)
+    M->>D: db.createDevice(data)
+    D-->>M: {id: 1, name, ip_address}
+    M-->>P: {success: true, data: result}
+    P-->>R: Promise resolves with device data
+
+    R->>P: window.electronAPI.startPing(deviceId, ip, 5000)
+    P->>M: ipcRenderer.invoke('ping:start', ...)
+    M->>M: networkMonitor.startMonitoring(deviceId, ip, interval)
+    M-->>P: {success: true, data: {status: 'started'}}
+    P-->>R: Monitoring started
 ```
 
 **Key Characteristics:**

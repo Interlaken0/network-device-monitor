@@ -40,6 +40,28 @@ This guide covers how to deploy the AMF Network Device Monitor desktop applicati
 
 ## Installation methods
 
+```mermaid
+flowchart TD
+    A[Obtain Installer .exe] --> B{Deployment Method?}
+    B -->|Single PC| C[Copy to Target Machine]
+    C --> D[Double-click Setup.exe]
+    D --> E[Windows SmartScreen?]
+    E -->|Yes| F[Click More info > Run anyway]
+    E -->|No| G[Silent Install]
+    F --> G
+    G --> H[App Auto-Launches]
+    H --> I[Desktop & Start Menu Shortcuts Created]
+    H --> L[Database Created in %AppData% on First Run]
+
+    B -->|Bulk / SCCM| J[Deploy via Group Policy or Intune]
+    J --> K[Run in User Context]
+    K --> G
+
+    style A fill:#e3f2fd
+    style I fill:#e8f5e9
+    style L fill:#fff3e0
+```
+
 ### Method 1: Interactive installation (single PC)
 
 1. Copy the installer to the target machine.
