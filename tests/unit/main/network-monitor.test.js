@@ -41,22 +41,6 @@ describe('NetworkMonitor', () => {
   it('getAllStatuses returns empty array initially', () => {
     expect(monitor.getAllStatuses()).toEqual([])
   })
-
-  it('has callback hooks for status changes', () => {
-    expect(monitor.onDeviceStatusChange).toBeNull()
-    expect(monitor.onAggregateStatus).toBeNull()
-  })
-
-  it('can set callback hooks', () => {
-    const deviceCallback = jest.fn()
-    const aggregateCallback = jest.fn()
-
-    monitor.onDeviceStatusChange = deviceCallback
-    monitor.onAggregateStatus = aggregateCallback
-
-    expect(monitor.onDeviceStatusChange).toBe(deviceCallback)
-    expect(monitor.onAggregateStatus).toBe(aggregateCallback)
-  })
 })
 
 describe('NetworkMonitor Singleton', () => {

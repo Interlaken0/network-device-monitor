@@ -125,57 +125,28 @@ class PingService {
         extra: isWindows ? ['-n', '1', '-w', '3000'] : ['-c', '1']
       })
 
-      // Update statistics
-      this.stats.totalPings++
-      if (result.alive) {
-        this.stats.successfulPings++
-        this.stats.latencies.push(result.time)
-        // Keep only last 10 latencies for running average
-        if (this.stats.latencies.length > 10) {
-          this.stats.latencies.shift()
-        }
-      } else {
-        this.stats.failedPings++
-      }
+      this._updateStats(result.alive, result.alive ? result.time : null)
 
-      // Log ping result with stats summary
       const status = result.alive ? `SUCCESS ${result.time}ms` : 'TIMEOUT'
-      const stats = this._getStatsSummary()
-      console.log(`[Ping] ${this.ipAddress}: ${status} | ${stats}`)
+      console.log(`[Ping] ${this.ipAddress}: ${status} | ${this._getStatsSummary()}`)
 
-      const pingData = {
-        deviceId: this.deviceId,
-        latencyMs: result.alive ? result.time : null,
-        success: result.alive,
-        packetLoss: !result.alive,
-        timestamp: new Date().toISOString()
-      }
+      const pingData = this._createPingData(result.alive, result.alive ? result.time : null, !result.alive)
+      await this._recordAndNotify(pingData, onResult)
 
-      // Record to database
-      const db = await getDatabase()
-      db.recordPing(pingData)
-
-      // Call callback if provided
-      if (onResult) {
-        onResult(pingData)
-      }
-
-      // Handle outage conditions with threshold-based detection
-      if (!result.alive) {
-        this.outageState.consecutiveFailures++
-        await this._handleOutage()
-      } else {
+      if (result.alive) {
         this.outageState.consecutiveFailures = 0
         this.outageState.lastSuccessfulPing = new Date()
-        
+
         // Check for high latency warnings
         if (result.time > this.outageThresholds.criticalLatencyMs) {
           await this._handleHighLatency('critical', result.time)
         } else if (result.time > this.outageThresholds.maxLatencyMs) {
           await this._handleHighLatency('warning', result.time)
         }
-        
+
         await this._resolveOutage()
+      } else {
+        await this._handlePingFailure()
       }
 
       return pingData
@@ -183,29 +154,12 @@ class PingService {
     } catch (error) {
       console.error(`Ping error for ${this.ipAddress}:`, error.message)
 
-      // Update statistics
-      this.stats.totalPings++
-      this.stats.failedPings++
+      this._updateStats(false, null)
 
-      const pingData = {
-        deviceId: this.deviceId,
-        latencyMs: null,
-        success: false,
-        packetLoss: true,
-        timestamp: new Date().toISOString()
-      }
+      const pingData = this._createPingData(false, null, true)
+      await this._recordAndNotify(pingData, onResult)
 
-      // Record failure to database
-      const db = await getDatabase()
-      db.recordPing(pingData)
-
-      if (onResult) {
-        onResult(pingData)
-      }
-
-      // Track consecutive failures for threshold-based detection
-      this.outageState.consecutiveFailures++
-      await this._handleOutage()
+      await this._handlePingFailure()
 
       return pingData
     }
@@ -275,6 +229,68 @@ class PingService {
       const duration = Math.round((Date.now() - new Date(activeOutage.start_time).getTime()) / 1000)
       console.log(`Outage resolved for device ${this.deviceId} (${this.ipAddress}) - Duration: ${duration}s`)
     }
+  }
+
+  /**
+   * Create a standardised ping data object.
+   * @private
+   * @param {boolean} success - Whether the ping succeeded
+   * @param {number|null} latencyMs - Latency in ms, or null if failed
+   * @param {boolean} packetLoss - Whether packet loss occurred
+   * @returns {Object} Ping data object
+   */
+  _createPingData(success, latencyMs, packetLoss) {
+    return {
+      deviceId: this.deviceId,
+      latencyMs,
+      success,
+      packetLoss,
+      timestamp: new Date().toISOString()
+    }
+  }
+
+  /**
+   * Update ping statistics for a single result.
+   * @private
+   * @param {boolean} success - Whether the ping succeeded
+   * @param {number|null} latencyMs - Latency in ms, or null if failed
+   */
+  _updateStats(success, latencyMs) {
+    this.stats.totalPings++
+    if (success) {
+      this.stats.successfulPings++
+      if (latencyMs !== null) {
+        this.stats.latencies.push(latencyMs)
+        if (this.stats.latencies.length > 10) {
+          this.stats.latencies.shift()
+        }
+      }
+    } else {
+      this.stats.failedPings++
+    }
+  }
+
+  /**
+   * Record ping data to database and invoke callback.
+   * @private
+   * @param {Object} pingData
+   * @param {Function|null} onResult
+   */
+  async _recordAndNotify(pingData, onResult) {
+    const db = await getDatabase()
+    db.recordPing(pingData)
+    if (onResult) {
+      onResult(pingData)
+    }
+  }
+
+  /**
+   * Handle a ping failure: increment consecutive failures and evaluate outage.
+   * @private
+   */
+  async _handlePingFailure() {
+    this.outageState.consecutiveFailures++
+    await this._handleOutage()
   }
 
   /**

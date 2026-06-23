@@ -65,6 +65,17 @@ function isSafeFilename(filename) {
  * @param {Object} query - Raw query from renderer
  * @returns {Object} Sanitised query
  */
+/**
+ * Validates retention days parameter.
+ * @param {number} days
+ * @throws {Error} If days is outside valid range
+ */
+function validateRetentionDays(days) {
+  if (days < 1 || days > 365) {
+    throw new Error('Retention days must be between 1 and 365')
+  }
+}
+
 function sanitiseExportQuery(query) {
   const validTypes = new Set(['ping_logs', 'outages', 'devices', 'summary'])
   const validTemplates = new Set(['uptime', 'latency', 'outage'])
@@ -666,20 +677,14 @@ export async function registerDatabaseHandlers() {
   // ========== Retention Policy Handlers ==========
   
   ipcMain.handle('retention:getStats', wrapHandler('getting retention stats', async (event, retentionDays = 30) => {
-    // Validate retention days
-    if (retentionDays < 1 || retentionDays > 365) {
-      throw new Error('Retention days must be between 1 and 365')
-    }
+    validateRetentionDays(retentionDays)
     
     const stats = db.getRetentionPolicyStats(retentionDays)
     return { success: true, data: stats }
   }))
 
   ipcMain.handle('retention:applyPolicy', wrapHandler('applying retention policy', async (event, retentionDays = 30) => {
-    // Validate retention days
-    if (retentionDays < 1 || retentionDays > 365) {
-      throw new Error('Retention days must be between 1 and 365')
-    }
+    validateRetentionDays(retentionDays)
     
     // Get stats before purge for reporting
     const beforeStats = db.getRetentionPolicyStats(retentionDays)

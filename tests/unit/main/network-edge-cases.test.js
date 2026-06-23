@@ -47,14 +47,13 @@ describe('Network Edge Cases', () => {
   describe('Unreachable Host Handling', () => {
     it('records failed ping with null latency', () => {
       const content = fs.readFileSync(pingServicePath, 'utf-8')
-      expect(content).toContain('latencyMs: null')
-      expect(content).toContain('success: false')
+      expect(content).toContain('_createPingData(false, null, true)')
     })
 
     it('handles outage detection when host unreachable', () => {
       const content = fs.readFileSync(pingServicePath, 'utf-8')
       expect(content).toContain('_handleOutage()')
-      expect(content).toContain('if (!result.alive)')
+      expect(content).toContain('_handlePingFailure()')
     })
 
     it('creates outage record for unreachable device', () => {
@@ -78,9 +77,9 @@ describe('Network Edge Cases', () => {
       const content = fs.readFileSync(pingServicePath, 'utf-8')
       const errorHandlerSection = content.substring(
         content.indexOf('catch (error)'),
-        content.indexOf('await this._handleOutage()', content.indexOf('catch (error)')) + 30
+        content.indexOf('await this._handlePingFailure()', content.indexOf('catch (error)')) + 30
       )
-      expect(errorHandlerSection).toContain('db.recordPing')
+      expect(errorHandlerSection).toContain('_recordAndNotify')
     })
 
     it('continues operation after ping failure', () => {
@@ -156,7 +155,7 @@ describe('Network Edge Cases', () => {
     it('notifies callbacks even on failure', () => {
       const content = fs.readFileSync(pingServicePath, 'utf-8')
       const errorSection = content.substring(content.indexOf('catch (error)'))
-      expect(errorSection).toContain('if (onResult)')
+      expect(errorSection).toContain('_recordAndNotify')
     })
   })
 
@@ -174,31 +173,22 @@ describe('Network Edge Cases', () => {
   })
 
   describe('Database Interaction Edge Cases', () => {
-    it('handles null database values in ping results', () => {
+    it('uses helper to construct ping data', () => {
       const content = fs.readFileSync(pingServicePath, 'utf-8')
-      expect(content).toContain('latencyMs: result.alive ? result.time : null')
+      expect(content).toContain('_createPingData(result.alive, result.alive ? result.time : null, !result.alive)')
     })
 
     it('packet loss is recorded as boolean', () => {
       const content = fs.readFileSync(pingServicePath, 'utf-8')
-      expect(content).toContain('packetLoss: !result.alive')
+      expect(content).toContain('_createPingData')
+      expect(content).toContain('_handlePingFailure()')
     })
   })
 
-  describe('Aggregate Status Edge Cases', () => {
-    it('handles empty monitored device list', () => {
+  describe('Broadcast to Renderer', () => {
+    it('sends ping results to all renderer windows', () => {
       const content = fs.readFileSync(networkMonitorPath, 'utf-8')
-      expect(content).toContain('healthPercentage: totalDevices > 0 ?')
-    })
-
-    it('handles devices with no ping history', () => {
-      const content = fs.readFileSync(networkMonitorPath, 'utf-8')
-      expect(content).toContain('if (latestPing)')
-    })
-
-    it('calculates average latency only when data exists', () => {
-      const content = fs.readFileSync(networkMonitorPath, 'utf-8')
-      expect(content).toContain('latencyCount > 0 ? totalLatency / latencyCount : null')
+      expect(content).toContain("win.webContents.send('ping:result'")
     })
   })
 })
@@ -274,10 +264,8 @@ describe('Monitoring Lifecycle Edge Cases', () => {
     expect(content).toContain('return started')
   })
 
-  it('restartAll stops before starting', () => {
+  it('alert engine processes ping results', () => {
     const content = fs.readFileSync(networkMonitorPath, 'utf-8')
-    const restartAllIndex = content.indexOf('restartAll')
-    const restartSection = content.substring(restartAllIndex, restartAllIndex + 200)
-    expect(restartSection).toContain('this.stopAll()')
+    expect(content).toContain('this.alertEngine.processPingResult')
   })
 })

@@ -17,8 +17,6 @@ class NetworkMonitor {
     /** @type {Map<number, PingService>} */
     this.services = new Map()
     this.alertEngine = new AlertEngine()
-    this.onDeviceStatusChange = null
-    this.onAggregateStatus = null
   }
 
   /**
@@ -75,10 +73,6 @@ class NetworkMonitor {
 
     console.log(`Stopped monitoring device ${deviceId}`)
     
-    if (this.onDeviceStatusChange) {
-      this.onDeviceStatusChange(deviceId, { status: 'stopped' })
-    }
-
     return true
   }
 
@@ -91,10 +85,6 @@ class NetworkMonitor {
     for (const [deviceId, service] of this.services) {
       service.stop()
       this.alertEngine.clearDeviceState(deviceId)
-
-      if (this.onDeviceStatusChange) {
-        this.onDeviceStatusChange(deviceId, { status: 'stopped' })
-      }
     }
 
     this.services.clear()
@@ -169,22 +159,6 @@ class NetworkMonitor {
       console.error(`AlertEngine error for device ${deviceId}:`, alertErr.message)
     }
 
-    // Update aggregate status if callback set
-    if (this.onAggregateStatus) {
-      const aggregate = await this._calculateAggregateStatus()
-      this.onAggregateStatus(aggregate)
-    }
-
-    // Notify device-specific change
-    if (this.onDeviceStatusChange) {
-      const status = pingData.success ? 'online' : 'offline'
-      this.onDeviceStatusChange(deviceId, {
-        status,
-        latencyMs: pingData.latencyMs,
-        lastPing: pingData.timestamp
-      })
-    }
-
     // Broadcast to renderer process
     const windows = BrowserWindow.getAllWindows()
     windows.forEach(win => {
@@ -197,45 +171,6 @@ class NetworkMonitor {
         // Window closed during iteration — safe to ignore
       }
     })
-  }
-
-  /**
-   * Calculate aggregate status across all devices
-   * @private
-   * @returns {Object} Aggregate statistics
-   */
-  async _calculateAggregateStatus() {
-    const db = await getDatabase()
-    let totalDevices = 0
-    let onlineDevices = 0
-    let offlineDevices = 0
-    let totalLatency = 0
-    let latencyCount = 0
-
-    for (const deviceId of this.services.keys()) {
-      totalDevices++
-      
-      const latestPing = db.getLatestPing(deviceId)
-      if (latestPing) {
-        if (latestPing.success) {
-          onlineDevices++
-          if (latestPing.latency_ms !== null) {
-            totalLatency += latestPing.latency_ms
-            latencyCount++
-          }
-        } else {
-          offlineDevices++
-        }
-      }
-    }
-
-    return {
-      totalDevices,
-      onlineDevices,
-      offlineDevices,
-      averageLatency: latencyCount > 0 ? totalLatency / latencyCount : null,
-      healthPercentage: totalDevices > 0 ? (onlineDevices / totalDevices) * 100 : 0
-    }
   }
 
   /**
@@ -261,15 +196,6 @@ class NetworkMonitor {
     return started
   }
 
-  /**
-   * Restart monitoring for all devices (useful after config changes)
-   * @param {number} [intervalMs=5000] - Ping interval
-   * @returns {Promise<number>} Number of devices restarted
-   */
-  async restartAll(intervalMs = 5000) {
-    this.stopAll()
-    return await this.monitorAllDevices(intervalMs)
-  }
 }
 
 // Export singleton instance
