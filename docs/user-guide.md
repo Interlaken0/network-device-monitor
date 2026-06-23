@@ -27,7 +27,7 @@ Everything runs locally on your Windows PC. No cloud accounts, no external servi
 ## Installation
 
 1. Download the installer from your line manager or the project shared drive.
-2. Double-click `amf-network-monitor-0.4.0 Setup.exe`.
+2. Double-click `amf-network-monitor-1.0.0 Setup.exe`.
 3. Windows SmartScreen may show a warning because the installer is not code-signed. Click **More info** then **Run anyway**.
 4. The installer places a shortcut on your Desktop and in the Start Menu under `JJ Confederation Ltd`.
 5. The application installs to `%LocalAppData%\AMFNetworkMonitor`.

@@ -32,7 +32,7 @@ This guide covers how to deploy the AMF Network Device Monitor desktop applicati
 
 ## What you need before starting
 
-1. The installer file: `amf-network-monitor-0.4.0 Setup.exe`
+1. The installer file: `amf-network-monitor-1.0.0 Setup.exe`
 2. Administrative rights on the target PC (for installation)
 3. (Optional) A code-signing certificate if you are re-packaging the application
 
@@ -43,7 +43,7 @@ This guide covers how to deploy the AMF Network Device Monitor desktop applicati
 ### Method 1: Interactive installation (single PC)
 
 1. Copy the installer to the target machine.
-2. Double-click `amf-network-monitor-0.4.0 Setup.exe`.
+2. Double-click `amf-network-monitor-1.0.0 Setup.exe`.
 3. If Windows SmartScreen appears, click **More info** then **Run anyway**.
 4. The installer runs silently for a few seconds. No wizard prompts appear — this is normal for Squirrel.Windows installers.
 5. Once complete, the application launches automatically and a Desktop shortcut is created.
@@ -53,7 +53,7 @@ This guide covers how to deploy the AMF Network Device Monitor desktop applicati
 | Location | Contents |
 |----------|----------|
 | `%LocalAppData%\AMFNetworkMonitor` | Application files, updater stub, and version metadata |
-| `%LocalAppData%\AMFNetworkMonitor\app-0.4.0` | The actual Electron application binaries |
+| `%LocalAppData%\AMFNetworkMonitor\app-1.0.0` | The actual Electron application binaries |
 | `%AppData%\amf-network-monitor` | User data: `network-monitor.sqlite` database and configuration |
 | Desktop | Shortcut to launch the app |
 | Start Menu | Shortcut under `JJ Confederation Ltd\amf-network-monitor` |
@@ -64,7 +64,7 @@ For deployment via Group Policy, SCCM, or Intune, run the installer in the user 
 
 ```powershell
 # Run installer (Squirrel.Windows executes in the background)
-amf-network-monitor-0.4.0 Setup.exe
+amf-network-monitor-1.0.0 Setup.exe
 ```
 
 **Note:** Squirrel.Windows `Setup.exe` does not accept a `--silent` parameter. The installer runs without a wizard by design. The app auto-launches at the end. To suppress the launch, configure a GPO or use a wrapper script.
@@ -116,7 +116,7 @@ The monitoring feature sends ICMP echo requests (pings) to the target devices. W
 
 **Option B: Allow only for the application**
 
-Create an outbound rule for `%LocalAppData%\AMFNetworkMonitor\app-0.4.0\amf-network-monitor.exe`, protocol ICMPv4, action **Allow**.
+Create an outbound rule for `%LocalAppData%\AMFNetworkMonitor\app-1.0.0\amf-network-monitor.exe`, protocol ICMPv4, action **Allow**.
 
 ---
 
@@ -193,7 +193,7 @@ The application includes an auto-updater stub. When a new version is published t
 **Cause:** Native module (better-sqlite3) was not unpacked correctly.
 
 **Fix:**
-1. Check that `%LocalAppData%\AMFNetworkMonitor\app-0.4.0\resources\app` contains the `better-sqlite3` folder.
+1. Check that `%LocalAppData%\AMFNetworkMonitor\app-1.0.0\resources\app` contains the `better-sqlite3` folder.
 2. If missing, the ASAR may not have unpacked correctly. Re-run the installer.
 
 ### Database is read-only or missing
@@ -230,14 +230,14 @@ For integrity verification, the following SHA-256 hashes apply to the Sprint 6 r
 
 | File | Expected SHA-256 |
 |------|----------------|
-| `amf-network-monitor-0.4.0 Setup.exe` | *(populate after build)* |
-| `AMFNetworkMonitor-0.4.0-full.nupkg` | *(populate after build)* |
+| `amf-network-monitor-1.0.0 Setup.exe` | *(populate after build)* |
+| `AMFNetworkMonitor-1.0.0-full.nupkg` | *(populate after build)* |
 
 Generate hashes on your build machine:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 "out\make\squirrel.windows\x64\amf-network-monitor-0.4.0 Setup.exe"
-Get-FileHash -Algorithm SHA256 "out\make\squirrel.windows\x64\AMFNetworkMonitor-0.4.0-full.nupkg"
+Get-FileHash -Algorithm SHA256 "out\make\squirrel.windows\x64\amf-network-monitor-1.0.0 Setup.exe"
+Get-FileHash -Algorithm SHA256 "out\make\squirrel.windows\x64\AMFNetworkMonitor-1.0.0-full.nupkg"
 ```
 
 ---

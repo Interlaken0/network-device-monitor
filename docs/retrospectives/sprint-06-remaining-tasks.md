@@ -10,7 +10,7 @@
 
 - **Week 1 (Day 1–7):** Pre-build polish, Electron Forge packaging, and QA verification — complete.
 - **Week 2 (Day 1–3):** Installer created, tested, and verified — shortcuts, Start Menu, Desktop all working.
-- **478 tests passing** across 20 suites.
+- **504 tests passing** across 22 suites.
 - **Lint and typecheck** report zero issues.
 
 ---
@@ -92,16 +92,16 @@ These tasks must be completed before the sprint can be signed off on 24th June.
 All items below must be true before the sprint is considered complete:
 
 - [x] Packaged `.exe` installs and runs
-- [x] All 450+ tests passing (478 passing)
+- [x] All 450+ tests passing (504 passing)
 - [ ] Coverage verified at 80%+
 - [x] Lint and typecheck report zero issues
-- [ ] Security checklist completed with no open findings
-- [ ] User guide, technical documentation, and deployment guide written and reviewed
-- [ ] KSB evidence mapped and compiled
+- [x] Security checklist completed with no open findings
+- [x] User guide, technical documentation, and deployment guide written and reviewed
+- [x] KSB evidence mapped and compiled
 - [ ] Line manager sign-off obtained
-- [ ] Final release tagged in Git (`v1.0.0`)
+- [x] Final release tagged in Git (`v1.0.0`)
 
 ---
 
 **Document Version:** 1.0  
-**Last Updated:** 18th June 2026
+**Last Updated:** 23rd June 2026
