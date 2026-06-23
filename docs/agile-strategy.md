@@ -95,7 +95,7 @@ A feature is Done only when:
 ### 4.2 Security Architecture (Inherited from Temperature Plotter)
 
 ```javascript
-// Main Process Security (src/main/index.js:32-40)
+// Main Process Security (src/main/index.js:66-73)
 webPreferences: {
   nodeIntegration: false,    // Security: Disable Node.js integration
   contextIsolation: true,  // Security: Enable context isolation
@@ -106,7 +106,7 @@ webPreferences: {
   enableBlinkFeatures: ''
 }
 
-// Preload.js - Secure Context Bridge (src/preload/index.js:63-139)
+// Preload.js - Secure Context Bridge (src/preload/index.js:65-150)
 contextBridge.exposeInMainWorld('electronAPI', {
   // Device management
   createDevice: (deviceData) => ipcRenderer.invoke('device:create', deviceData),
