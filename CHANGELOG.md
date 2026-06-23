@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/Interlaken0/network-device-monitor/compare/v0.5.0...v1.0.0) (2026-06-23)
+
+
+### Features
+
+* **main:** Add Squirrel event handling for Windows installer shortcuts ([9360c94](https://github.com/Interlaken0/network-device-monitor/commit/9360c94))
+* **tooling:** Complete Sprint 6 Week 1 packaging and QA ([44a5a4e](https://github.com/Interlaken0/network-device-monitor/commit/44a5a4e))
+
+### Bug Fixes
+
+* **main:** Remove dev server fallback so packaged app loads renderer ([0cfa8de](https://github.com/Interlaken0/network-device-monitor/commit/0cfa8de))
+
+### Documentation
+
+* **guide:** Add sprint 6 evidence and fix documentation inaccuracies ([9373ddf](https://github.com/Interlaken0/network-device-monitor/commit/9373ddf))
+
 ## [0.5.0](https://github.com/Interlaken0/network-device-monitor/compare/v0.4.0...v0.5.0) (2026-06-10)
 
 
