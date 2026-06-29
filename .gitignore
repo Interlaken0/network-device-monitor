@@ -73,3 +73,5 @@ release/
 app/dist/
 test-summary.txt
 app/
+docs/retrospectives/sprint-06-coverage-verification.md
+docs/retrospectives/sprint-06-week2-verification.md
