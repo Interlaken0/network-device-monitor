@@ -72,3 +72,4 @@ jspm_packages/
 release/
 app/dist/
 test-summary.txt
+app/
